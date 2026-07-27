@@ -1,0 +1,28 @@
+# Evidence Manifest — H1 RACF Sandbox Dataset Profiles
+
+- `evidence/screenshots/01_initial_search_no_seclab_profiles.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/02_before_public_dataset_not_found.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/03_before_private_dataset_not_found.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/04_before_granted_dataset_not_found.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/05_alloc_dataset_commands.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/06_public_dataset_cataloged.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/07_private_dataset_cataloged.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/08_granted_dataset_cataloged.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/09_failed_addsd_double_star_generic.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/10_failed_listdsd_double_star_generic.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/11_public_profile_uacc_read_top.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/12_public_profile_no_access_list.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/13_private_profile_uacc_none_top.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/14_private_profile_no_access_list.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/15_granted_profile_uacc_none_top.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/16_granted_user2_read_access_list.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/17_private_profile_audit_failures_read_top.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/18_private_profile_audit_no_access_list.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/19_final_public_uacc_read.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/20_final_public_no_access_list.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/21_final_private_uacc_none_audit.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/22_final_private_no_access_list.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/23_final_granted_uacc_none.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/24_final_granted_user2_read.png` — extracted from `LAB01.docx`
+- `evidence/screenshots/25_final_search_mask_no_entries_note.png` — extracted from `LAB01.docx`
+- `evidence/source-documents/LAB01.docx` — original uploaded Word evidence document
