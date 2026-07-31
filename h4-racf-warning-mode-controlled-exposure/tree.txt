@@ -1,0 +1,38 @@
+h4-racf-warning-mode-controlled-exposure/
+├── evidence
+│   ├── screenshots
+│   │   ├── 01_listcat_warning_dataset_not_found_or_typo_precheck.png
+│   │   ├── 02_listdsd_warning_profile_baseline_uacc_none_warning_no.png
+│   │   ├── 03_listdsd_warning_baseline_detail_no_access_list.png
+│   │   ├── 04_listdsd_warning_mode_enabled_warning_yes.png
+│   │   ├── 05_listdsd_warning_enabled_detail_no_access_list.png
+│   │   ├── 06_listdsd_warning_with_audit_all_read.png
+│   │   ├── 07_listdsd_warning_audit_detail.png
+│   │   ├── 08_listdsd_warning_nowarning_final.png
+│   │   ├── 09_listdsd_warning_nowarning_detail.png
+│   │   ├── 10_setropts_generic_dataset_refresh_command_history.png
+│   │   ├── 11_listdsd_public_profile_uacc_read.png
+│   │   ├── 12_listdsd_public_detail_no_access_list.png
+│   │   ├── 13_listdsd_private_profile_uacc_none.png
+│   │   ├── 14_listdsd_private_detail_no_access_list.png
+│   │   ├── 15_listdsd_private_final_recheck.png
+│   │   ├── 16_listdsd_private_final_detail.png
+│   │   ├── 17_listdsd_granted_profile_uacc_none.png
+│   │   ├── 18_listdsd_granted_detail_user2_read.png
+│   │   ├── 19_listdsd_granted_final_recheck.png
+│   │   └── 20_listdsd_granted_final_detail_user2_read.png
+│   ├── source-documents
+│   │   └── WARNING.docx
+│   └── h4_contact_sheet.jpg
+├── attack-scenario.md
+├── commands.md
+├── defensive-control.md
+├── evidence-manifest.md
+├── evidence-walkthrough.md
+├── findings.md
+├── github-upload-commands.md
+├── hardening-notes.md
+├── README.md
+├── risk-analysis.md
+├── rollback-notes.md
+└── source-basis.md
