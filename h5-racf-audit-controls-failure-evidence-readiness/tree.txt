@@ -1,0 +1,18 @@
+h5-racf-audit-controls-failure-evidence-readiness/
+├── README.md
+├── commands.md
+├── attack-scenario.md
+├── defensive-control.md
+├── evidence-walkthrough.md
+├── findings.md
+├── risk-analysis.md
+├── hardening-notes.md
+├── rollback-notes.md
+├── source-basis.md
+├── evidence-manifest.md
+├── github-upload-commands.md
+├── tree.txt
+└── evidence/
+    ├── h5_contact_sheet.jpg
+    ├── screenshots/
+    └── source-documents/
