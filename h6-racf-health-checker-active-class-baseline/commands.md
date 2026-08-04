@@ -1,0 +1,67 @@
+# Commands
+
+## Start and verify Health Checker
+
+```text
+/S HZSPROC
+/D A,HZSPROC
+/F HZSPROC,RUN,CHECK=(IBMRACF,*)
+```
+
+## Navigate Health Checker
+
+```text
+CK
+F UNIXPRIV
+F TEMPDSN
+F OPERCMDS
+```
+
+## Verify UNIXPRIV profiles
+
+```text
+RLIST UNIXPRIV SUPERUSER.FILESYS ALL
+RLIST UNIXPRIV SUPERUSER.FILESYS.CHOWN ALL
+```
+
+## Activate TEMPDSN
+
+```text
+SETROPTS CLASSACT(TEMPDSN)
+SETROPTS LIST
+```
+
+## OPERCMDS discovery
+
+```text
+SEARCH CLASS(OPERCMDS) MASK(*)
+```
+
+Existing profiles observed in evidence:
+
+```text
+MVS.SET.PROG
+MVS.SETPROG
+```
+
+## OPERCMDS guarded laboratory setup
+
+```text
+SETROPTS GENERIC(OPERCMDS)
+RDEFINE OPERCMDS MVS.** UACC(NONE) WARNING
+PERMIT MVS.** CLASS(OPERCMDS) ID(IBMUSER) ACCESS(READ)
+SETROPTS CLASSACT(OPERCMDS)
+SETROPTS RACLIST(OPERCMDS)
+SETROPTS RACLIST(OPERCMDS) REFRESH
+SETROPTS LIST
+```
+
+## Final Health Checker run
+
+```text
+/F HZSPROC,RUN,CHECK=(IBMRACF,*)
+CK
+F UNIXPRIV
+F TEMPDSN
+F OPERCMDS
+```
