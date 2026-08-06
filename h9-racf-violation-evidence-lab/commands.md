@@ -1,0 +1,59 @@
+# Commands — H9 RACF Violation Evidence Lab
+
+## IBMUSER baseline
+
+```text
+LISTUSER H7USER
+LISTDSD DA('IBMUSER.SECLAB.PRIVATE.*') ALL
+LISTDSD DA('IBMUSER.SECLAB.AUDIT.*') ALL
+LISTDSD DA('IBMUSER.SECLAB.GRANTED.*') ALL
+```
+
+## SDSF SYSLOG searches
+
+```text
+F H7USER
+F ICH408I
+```
+
+## H7USER access tests
+
+From the H7USER ISPF session:
+
+```text
+ISPF 3.4
+IBMUSER.SECLAB.PRIVATE
+B IBMUSER.SECLAB.PRIVATE.DATA
+```
+
+```text
+ISPF 3.4
+IBMUSER.SECLAB.AUDIT
+B IBMUSER.SECLAB.AUDIT.DATA
+```
+
+```text
+ISPF 3.4
+IBMUSER.SECLAB.GRANTED
+B IBMUSER.SECLAB.GRANTED.DATA
+```
+
+## SMF status
+
+From SDSF LOG:
+
+```text
+/D SMF
+```
+
+## Commands deliberately avoided
+
+```text
+SETROPTS GLOBALAUDIT
+SETROPTS PROTECTALL
+RACF database unload
+SMF dump
+PERMIT on SYS1.*
+PERMIT on ADCD.Z111S.*
+DELETE / DELDSD
+```
