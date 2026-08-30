@@ -228,3 +228,19 @@ Laboratorio prÃ¡ctico de seguridad RACF/zOS usando comandos TSO en 3270. RevisiÃ
 - Lab 02 - DSMON Selected User Attribute Report.
 - Lab 03 - RACF dataset profile review.
 - Lab 04 - RACF logging and privileged activity review.
+
+---
+
+## Part of the z/OS Engineering Laboratory
+
+This repository is a specialized component of the broader **z/OS Engineering Laboratory** built on z/OS ADCD 1.11 / Hercules.
+
+### Master architecture
+
+https://github.com/P-dot/zos-adcd-hercules-engineering-lab
+
+### Engineering methodology
+
+```text
+Build -> Execute -> Observe -> Diagnose -> Correct -> Validate -> Document
+```
