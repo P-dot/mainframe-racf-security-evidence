@@ -104,7 +104,12 @@ The repository owns practical security work around:
 - controlled hardening;
 - audit-style reporting;
 - risk registers;
-- production recommendations.
+- production recommendations;
+- RACF digital-certificate and key-ring authorization;
+- `IRR.DIGTCERT.*` FACILITY controls;
+- RACDCERT effective-authority validation;
+- cryptographic least-privilege delegation;
+- RACLIST cache / runtime-authority validation.
 
 ---
 
@@ -221,6 +226,8 @@ lab-27
 lab-28
 lab-29
 lab-30
+lab-31
+lab-32
 ```
 
 This series expands into cross-domain z/OS security analysis.
@@ -912,6 +919,94 @@ functional rollback validation
 
 ---
 
+## RACF cryptographic-security track
+
+### Lab 31 — Digital Certificate Trust and Key Ring Security Baseline
+
+Lab 31 establishes the RACF-side baseline for certificate and key-ring administration.
+
+It deliberately does not duplicate the network-oriented certificate inventory already performed by the Communications Server repository.
+
+```text
+Communications Server
+certificate / service inventory
+        |
+        v
+RACF
+administrative authorization
+effective authority
+least privilege
+```
+
+The lab validates the observed `IRR.DIGTCERT.*` control state and confirms that the controlled non-privileged identity cannot issue the tested RACDCERT operations without explicit authorization.
+
+### Lab 32 — Controlled Cryptographic Delegation and Key Ring Validation
+
+Lab 32 converts the Lab 31 baseline into a controlled least-privilege experiment.
+
+```text
+LISTRING
+IRR.DIGTCERT.LISTRING READ
+        |
+        v
+own key-ring query allowed
+
+ADDRING
+IRR.DIGTCERT.ADDRING UPDATE
+        |
+        v
+laboratory key ring created
+
+DELRING
+IRR.DIGTCERT.DELRING UPDATE
+        |
+        v
+laboratory key ring removed
+```
+
+The lab also proves the importance of RACLIST refresh behavior. After temporary permissions were removed from the RACF database, the previously cached FACILITY authorization remained effective until:
+
+```text
+SETROPTS RACLIST(FACILITY) REFRESH
+```
+
+The lab finishes with object rollback, authorization rollback, and structural rollback, and verifies return to the original denied state.
+
+### Planned Lab 33 — Controlled Certificate and Key Ring Lifecycle
+
+Lab 33 is planned to create only laboratory cryptographic material and a dedicated key ring under controlled RACF ownership.
+
+It should prepare a clean handoff to Communications Server without moving TCP/IP, PAGENT, TTLSRule, or AT-TLS configuration into the RACF repository.
+
+```text
+Communications Server Lab 09
+certificate / key-ring inventory
+        |
+        v
+RACF Lab 31
+cryptographic authorization baseline
+        |
+        v
+RACF Lab 32
+controlled RACDCERT delegation
+        |
+        v
+RACF Lab 33
+controlled certificate + key-ring lifecycle
+        |
+        v
+Communications Server
+PAGENT / TTLSRule / AT-TLS
+        |
+        v
+TLS validation
+        |
+        v
+SMF / observability
+```
+
+---
+
 ## 40. Core security model
 
 Across the repository, the recurring model is:
@@ -1029,7 +1124,10 @@ Relevant RACF-side topics can include:
 - SERVAUTH;
 - dataset access;
 - OMVS attributes;
-- privileged UNIX capabilities.
+- privileged UNIX capabilities;
+- RACF certificate/key-ring ownership and administration;
+- `IRR.DIGTCERT.*` effective authority;
+- least-privilege RACDCERT delegation.
 
 Specific networking behavior remains in the Communications Server repo.
 
@@ -1230,6 +1328,12 @@ The current repository validates practical work in:
 | UNIXMAP UID(0) exposure review | Validated |
 | controlled UNIXPRIV delegation | Validated |
 | functional rollback proof | Validated |
+| RACF digital-certificate/key-ring authorization baseline | Validated |
+| RACDCERT LISTRING least-privilege delegation | Validated |
+| RACDCERT ADDRING least-privilege delegation | Validated |
+| RACDCERT DELRING least-privilege delegation | Validated |
+| FACILITY RACLIST effective-authority behavior | Validated |
+| cryptographic authorization rollback | Validated |
 
 ---
 
@@ -1248,6 +1352,9 @@ These should remain explicitly marked as planned:
 | Production-style identity lifecycle automation | Planned |
 | Cross-repo SMF security-event correlation | Planned |
 | End-to-end enterprise security control chain | Planned |
+| Controlled RACF certificate + key-ring lifecycle | Planned |
+| RACF-to-Communications Server AT-TLS handoff | Planned |
+| End-to-end TLS validation with RACF-backed key ring | Planned |
 
 ---
 

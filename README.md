@@ -53,7 +53,7 @@ The central question is:
 The repository currently contains two complementary lab series:
 
 - **H1–H13** — controlled RACF access-control and remediation exercises.
-- **Main security series through Lab 30** — wider RACF/SAF, OMVS, JES2/SDSF, OPERCMDS, APF, audit and effective-authority analysis.
+- **Main security series through Lab 32** — wider RACF/SAF, OMVS, JES2/SDSF, OPERCMDS, APF, audit, UNIXPRIV and cryptographic effective-authority analysis.
 
 Major validated areas include:
 
@@ -80,6 +80,9 @@ Major validated areas include:
 - effective-authority validation
 - UNIXPRIV and UNIXMAP
 - controlled least-privilege delegation
+- RACF digital-certificate and key-ring authorization
+- RACDCERT least-privilege delegation
+- FACILITY RACLIST cache / effective-authority validation
 
 ---
 
@@ -140,6 +143,8 @@ profile
 | [Lab 28](lab-28-racf-ispf-group-dataset-access-control/) | ISPF / Groups / DATASET | Functional group-based access |
 | [Lab 29](lab-29-racf-unixpriv-security-baseline-effective-privilege-analysis/) | UNIXPRIV | Effective privileged-UNIX baseline |
 | [Lab 30](lab-30-racf-unixpriv-controlled-delegation-validation/) | UNIXPRIV Delegation | Least privilege and rollback |
+| [Lab 31](lab-31-racf-digital-certificate-trust-keyring-security-baseline/) | RACF Digital Certificates / Key Rings | Cryptographic authorization baseline |
+| [Lab 32](lab-32-racf-controlled-cryptographic-delegation-keyring-validation/) | RACDCERT Delegation | Function-specific least privilege, RACLIST behavior and rollback |
 
 > The numbering reflects the repository's actual historical development. Missing numbers are not silently represented as completed labs.
 
@@ -264,6 +269,50 @@ This is one of the repository's clearest demonstrations of least privilege plus 
 
 ---
 
+## Labs 31–32 — RACF cryptographic authorization and controlled delegation
+
+Labs 31 and 32 extend the RACF/SAF security track into digital-certificate and key-ring authorization.
+
+Lab 31 establishes the read-only cryptographic authorization baseline. It identifies the relevant `IRR.DIGTCERT.*` FACILITY controls that are present in the laboratory and validates the effective authorization boundary with the controlled `H7USER` identity.
+
+Lab 32 then demonstrates a controlled RACDCERT delegation lifecycle using separate administrative controls for `LISTRING`, `ADDRING`, and `DELRING`.
+
+```text
+DENIED
+   |
+   v
+minimum function-specific authority
+   |
+   v
+ALLOWED
+   |
+   v
+controlled key-ring creation
+   |
+   v
+separate deletion boundary
+   |
+   v
+controlled cleanup
+   |
+   v
+authorization rollback
+   |
+   v
+FACILITY RACLIST refresh
+   |
+   v
+DENIED AGAIN
+```
+
+The lab also demonstrates that, for a RACLISTed class, changing the RACF database is not the same as changing effective runtime authority until the relevant RACLIST cache is refreshed.
+
+No real service certificate, private key, or production-like network identity is created by Lab 32.
+
+The next planned step is Lab 33, which will move from authorization mechanics into a controlled laboratory certificate and dedicated key-ring lifecycle before handoff to Communications Server for AT-TLS integration.
+
+---
+
 # RACF / SAF in the wider z/OS ecosystem
 
 RACF is a cross-cutting security layer.
@@ -313,9 +362,9 @@ JES2 execution and spool engineering remain part of the central z/OS engineering
 
 ### Communications Server
 
-Future cross-repository security integration can cover started-task identities, SAF controls, SERVAUTH, OMVS attributes and least-privilege service authorization.
+Cross-repository security integration now also includes a defined certificate/key-ring boundary. The Communications Server repository owns network-service certificate inventory, PAGENT, TTLSRule, AT-TLS and transport validation. This repository owns RACF certificate/key-ring administrative authorization, `IRR.DIGTCERT.*`, effective authority and least-privilege RACDCERT delegation.
 
-TCP/IP engineering itself belongs to the Communications Server repository.
+TCP/IP engineering itself remains in the Communications Server repository.
 
 ### Scheduler
 
@@ -477,6 +526,10 @@ effective-authority analysis
 UNIXPRIV
 UNIXMAP
 controlled least-privilege delegation
+RACDCERT / IRR.DIGTCERT.* authorization
+digital certificate / key-ring security baseline
+function-specific cryptographic delegation
+FACILITY RACLIST effective-authority validation
 ```
 
 The current repository should therefore be understood as a **cross-domain z/OS security engineering track**, not only as an introductory RACF command collection.
@@ -505,6 +558,18 @@ RACF -> CICS / Db2 security boundary
 
 ```text
 SAF authorization -> SMF evidence -> security analysis
+```
+
+
+
+A new cryptographic integration path is now partially validated:
+
+```text
+Communications Server certificate inventory
+        -> RACF cryptographic authorization baseline
+        -> RACF controlled delegation
+        -> Lab 33 controlled certificate/key-ring lifecycle [planned]
+        -> Communications Server AT-TLS / PAGENT / TTLSRule [planned]
 ```
 
 These paths remain planned until implemented and validated with evidence.
