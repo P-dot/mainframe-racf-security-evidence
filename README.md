@@ -53,7 +53,7 @@ The central question is:
 The repository currently contains two complementary lab series:
 
 - **H1–H13** — controlled RACF access-control and remediation exercises.
-- **Main security series through Lab 32** — wider RACF/SAF, OMVS, JES2/SDSF, OPERCMDS, APF, audit, UNIXPRIV and cryptographic effective-authority analysis.
+- **Main security series through Lab 33** — wider RACF/SAF, OMVS, JES2/SDSF, OPERCMDS, APF, audit, UNIXPRIV and cryptographic effective-authority analysis.
 
 Major validated areas include:
 
@@ -83,6 +83,10 @@ Major validated areas include:
 - RACF digital-certificate and key-ring authorization
 - RACDCERT least-privilege delegation
 - FACILITY RACLIST cache / effective-authority validation
+- controlled RACF certificate generation
+- dedicated RACF key-ring lifecycle
+- certificate-to-key-ring CONNECT authorization
+- retained cryptographic identity with administrative rollback
 
 ---
 
@@ -145,6 +149,7 @@ profile
 | [Lab 30](lab-30-racf-unixpriv-controlled-delegation-validation/) | UNIXPRIV Delegation | Least privilege and rollback |
 | [Lab 31](lab-31-racf-digital-certificate-trust-keyring-security-baseline/) | RACF Digital Certificates / Key Rings | Cryptographic authorization baseline |
 | [Lab 32](lab-32-racf-controlled-cryptographic-delegation-keyring-validation/) | RACDCERT Delegation | Function-specific least privilege, RACLIST behavior and rollback |
+| [Lab 33](lab-33-racf-controlled-certificate-keyring-lifecycle/) | Certificate / Key Ring Lifecycle | Synthetic certificate, dedicated ring, CONNECT validation and retained-state rollback |
 
 > The numbering reflects the repository's actual historical development. Missing numbers are not silently represented as completed labs.
 
@@ -269,9 +274,9 @@ This is one of the repository's clearest demonstrations of least privilege plus 
 
 ---
 
-## Labs 31–32 — RACF cryptographic authorization and controlled delegation
+## Labs 31–33 — RACF cryptographic authorization, delegation and lifecycle
 
-Labs 31 and 32 extend the RACF/SAF security track into digital-certificate and key-ring authorization.
+Labs 31 through 33 extend the RACF/SAF security track from digital-certificate and key-ring authorization into a controlled cryptographic-object lifecycle.
 
 Lab 31 establishes the read-only cryptographic authorization baseline. It identifies the relevant `IRR.DIGTCERT.*` FACILITY controls that are present in the laboratory and validates the effective authorization boundary with the controlled `H7USER` identity.
 
@@ -309,7 +314,28 @@ The lab also demonstrates that, for a RACLISTed class, changing the RACF databas
 
 No real service certificate, private key, or production-like network identity is created by Lab 32.
 
-The next planned step is Lab 33, which will move from authorization mechanics into a controlled laboratory certificate and dedicated key-ring lifecycle before handoff to Communications Server for AT-TLS integration.
+Lab 33 then moves from authorization mechanics into a real but synthetic RACF cryptographic-object lifecycle. It generates `LAB33CERT`, creates the dedicated `LAB33RING`, validates the independent `CONNECT` authorization boundary, and verifies the resulting certificate-to-ring association.
+
+The lab removes H7USER's temporary administrative delegation and deletes the FACILITY profiles created specifically for the experiment, while deliberately retaining `LAB33CERT`, its RACF-managed private key, `LAB33RING`, and their association. This creates a controlled retained state for the next cross-repository handoff.
+
+```text
+Lab 31
+cryptographic authorization baseline
+        |
+        v
+Lab 32
+controlled RACDCERT delegation
+        |
+        v
+Lab 33
+LAB33CERT + LAB33RING
+        |
+        v
+Communications Server [planned]
+Policy Agent / TTLSRule / AT-TLS
+```
+
+Lab 33 does not claim that AT-TLS, Policy Agent, System SSL, or a network TLS path is active.
 
 ---
 
@@ -362,7 +388,7 @@ JES2 execution and spool engineering remain part of the central z/OS engineering
 
 ### Communications Server
 
-Cross-repository security integration now also includes a defined certificate/key-ring boundary. The Communications Server repository owns network-service certificate inventory, PAGENT, TTLSRule, AT-TLS and transport validation. This repository owns RACF certificate/key-ring administrative authorization, `IRR.DIGTCERT.*`, effective authority and least-privilege RACDCERT delegation.
+Cross-repository security integration now includes a validated RACF certificate/key-ring boundary. The Communications Server repository owns network-service certificate inventory, Policy Agent/PAGENT, TTLSRule, AT-TLS and transport validation. This repository owns RACF certificate/key-ring identity, `IRR.DIGTCERT.*`, RACDCERT effective authority and least-privilege delegation. Lab 33 retains the synthetic `LAB33CERT` + `LAB33RING` pair as the RACF-side handoff artifact; consumption by a network service remains planned.
 
 TCP/IP engineering itself remains in the Communications Server repository.
 
