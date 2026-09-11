@@ -228,6 +228,7 @@ lab-29
 lab-30
 lab-31
 lab-32
+lab-33
 ```
 
 This series expands into cross-domain z/OS security analysis.
@@ -972,11 +973,49 @@ SETROPTS RACLIST(FACILITY) REFRESH
 
 The lab finishes with object rollback, authorization rollback, and structural rollback, and verifies return to the original denied state.
 
-### Planned Lab 33 — Controlled Certificate and Key Ring Lifecycle
+### Lab 33 — Controlled Certificate and Key Ring Lifecycle
 
-Lab 33 is planned to create only laboratory cryptographic material and a dedicated key ring under controlled RACF ownership.
+Lab 33 completes the RACF-side cryptographic lifecycle by creating synthetic cryptographic material under controlled ownership and function-specific authorization.
 
-It should prepare a clean handoff to Communications Server without moving TCP/IP, PAGENT, TTLSRule, or AT-TLS configuration into the RACF repository.
+The validated sequence includes:
+
+```text
+GENCERT denied
+        |
+        v
+minimum operation-specific delegation
+        |
+        v
+LAB33CERT created
+        |
+        v
+LAB33RING created
+        |
+        v
+LISTRING boundary validated
+        |
+        v
+CONNECT denied
+        |
+        v
+CONNECT delegated
+        |
+        v
+LAB33CERT -> LAB33RING
+        |
+        v
+temporary administrative authority removed
+        |
+        v
+FACILITY RACLIST refreshed
+        |
+        v
+H7USER denied again
+```
+
+The lab deliberately retains `LAB33CERT`, its RACF-managed private key, `LAB33RING`, and their association while removing temporary H7USER administrative authority and deleting the Lab 33-specific FACILITY profiles.
+
+This is a controlled retained state for cross-repository integration. It does not demonstrate an active AT-TLS, Policy Agent, System SSL, or network TLS path.
 
 ```text
 Communications Server Lab 09
@@ -1334,6 +1373,11 @@ The current repository validates practical work in:
 | RACDCERT DELRING least-privilege delegation | Validated |
 | FACILITY RACLIST effective-authority behavior | Validated |
 | cryptographic authorization rollback | Validated |
+| controlled RACF certificate generation | Validated |
+| dedicated RACF key-ring creation | Validated |
+| RACDCERT CONNECT authorization boundary | Validated |
+| certificate-to-key-ring association | Validated |
+| retained cryptographic state after administrative rollback | Validated |
 
 ---
 
@@ -1352,7 +1396,6 @@ These should remain explicitly marked as planned:
 | Production-style identity lifecycle automation | Planned |
 | Cross-repo SMF security-event correlation | Planned |
 | End-to-end enterprise security control chain | Planned |
-| Controlled RACF certificate + key-ring lifecycle | Planned |
 | RACF-to-Communications Server AT-TLS handoff | Planned |
 | End-to-end TLS validation with RACF-backed key ring | Planned |
 
@@ -1558,31 +1601,41 @@ The value is in the methodology and demonstrated technical skill.
 
 ## 65. Future integration — RACF + Communications Server
 
+The RACF-side cryptographic prerequisite is now validated through Lab 33. The network-consumption and observability stages remain planned.
+
 Recommended future branch:
 
 ```text
 integration/racf-network-smf
 ```
 
-Possible flow:
+Current handoff:
 
 ```text
-TCP/IP service
-   |
-   v
-started-task identity
-   |
-   v
-SAF resource
-   |
-   v
-RACF decision
-   |
-   v
-SMF evidence
+Communications Server certificate/key-ring inventory
+        |
+        v
+RACF Lab 31 authorization baseline
+        |
+        v
+RACF Lab 32 controlled delegation
+        |
+        v
+RACF Lab 33
+LAB33CERT + LAB33RING
+        |
+        v
+Communications Server [planned]
+Policy Agent / TTLSRule / AT-TLS
+        |
+        v
+controlled TLS validation
+        |
+        v
+SMF / observability
 ```
 
-Only implement this when each dependency is validated.
+The retained RACF objects are not evidence that a network TLS path is already active.
 
 ---
 
