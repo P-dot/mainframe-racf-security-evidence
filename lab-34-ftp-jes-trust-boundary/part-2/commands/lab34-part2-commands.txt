@@ -1,0 +1,169 @@
+======================================================================
+LAB 34 PART 2
+CHANNEL-DEPENDENT FTP-TO-JES AUTHORIZATION VALIDATION
+======================================================================
+
+PHASE 1 - CREATE A MINIMAL VALID JOB
+
+Member:
+H7USER.JCL.LAB(FTPJES2)
+
+Content:
+//H7FTP2 JOB (LAB),'FTP JES P2',CLASS=A,MSGCLASS=X,NOTIFY=H7USER
+//STEP1 EXEC PGM=IEFBR14
+
+Purpose:
+Remove the Part 1 JCL-conversion ambiguity with a harmless two-line job.
+
+----------------------------------------------------------------------
+PHASE 2 - TEST TSO/E SUBMIT AS H7USER
+
+SUBMIT 'H7USER.JCL.LAB(FTPJES2)'
+
+Observed:
+IKJ56251I USER NOT AUTHORIZED FOR SUBMIT
+IKJ56251I YOUR TSO ADMINISTRATOR MUST AUTHORIZE USE OF THIS COMMAND
+
+Classification:
+TSO/E command-authorization denial.
+
+----------------------------------------------------------------------
+PHASE 3 - TEST THE SAME MEMBER THROUGH FTP/JES
+
+ftp 127.0.0.1
+USER H7USER
+quote STAT
+quote SITE FILE=JES
+put 'H7USER.JCL.LAB(FTPJES2)'
+
+Observed relevant response:
+125 Sending Job to JES internal reader FIXrecfm 80
+250-It is known to JES as JOB07465
+250 Transfer completed successfully.
+
+Classification:
+FTP/JES ingress succeeded.
+
+----------------------------------------------------------------------
+PHASE 4 - VERIFY EXECUTION IN JES SPOOL
+
+Observed:
+IRR010I USERID H7USER IS ASSIGNED TO THIS JOB.
+$HASP373 H7FTP2 STARTED
+$HASP395 H7FTP2 ENDED
+
+JESJCL:
+//H7FTP2 JOB (LAB),'FTP JES P2',CLASS=A,MSGCLASS=X,NOTIFY=H7USER
+//STEP1 EXEC PGM=IEFBR14
+
+JESYSMSG:
+IEF142I H7FTP2 STEP1 - STEP WAS EXECUTED - COND CODE 0000
+
+Classification:
+Successful harmless batch execution as H7USER.
+
+----------------------------------------------------------------------
+PHASE 5 - INSPECT TSOAUTH
+
+RLIST TSOAUTH JCL ALL
+
+Observed:
+Profile JCL present in TSOAUTH.
+UACC(NONE).
+H7USER not present in the access list.
+
+----------------------------------------------------------------------
+PHASE 6 - INSPECT THE CONTROLLED IDENTITY
+
+LISTUSER H7USER
+
+Observed:
+ATTRIBUTES=NONE
+Group H7GRP with AUTH=USE
+
+Interpretation:
+No broad RACF administrative attribute explains the result.
+
+----------------------------------------------------------------------
+PHASE 7 - REVIEW JESJOBS
+
+SEARCH CLASS(JESJOBS)
+
+Observed:
+ICH31005I NO ENTRIES MEET SEARCH CRITERIA
+
+Interpretation:
+No matching JESJOBS profiles were found in the captured configuration.
+
+----------------------------------------------------------------------
+PHASE 8 - REVIEW JESINPUT
+
+SEARCH CLASS(JESINPUT)
+
+Observed:
+ICH31005I NO ENTRIES MEET SEARCH CRITERIA
+
+Interpretation:
+No matching JESINPUT profiles were found. The precise effective SAF path for
+this FTP/JES level-1 submission remains a separate research question.
+
+----------------------------------------------------------------------
+PHASE 9 - RULE OUT SURROGATE EXECUTION
+
+SEARCH CLASS(SURROGAT)
+RLIST SURROGAT IBMUSER.SUBMIT ALL
+
+Observed:
+IBMUSER.SUBMIT exists.
+UACC(NONE).
+H7USER not present in the access list.
+
+Interpretation:
+SURROGAT IBMUSER.SUBMIT does not explain JOB07465. Spool evidence independently
+shows H7USER assigned to the job.
+
+----------------------------------------------------------------------
+PHASE 10 - INSPECT JES2 INTERNAL-READER STATE
+
+$D RDI(*)
+$D RDI(*),LONG
+
+Observed after job completion:
+$HASP003 ... NO SELECTABLE ENTRIES FOUND
+
+Interpretation:
+Point-in-time result only. Do not infer that no dynamic internal reader existed
+while the FTP submission was active.
+
+$D INTRDR
+
+Observed:
+AUTH=(DEVICE=NO,JOB=YES,SYSTEM=YES)
+BATCH=YES
+CLASS=A
+HOLD=NO
+HONORLIM=NO
+PRTYINC=0
+PRTYLIM=15
+SYSAFF=(ANY)
+TRACE=NO
+
+Interpretation:
+The global internal-reader configuration permits batch processing and defaults
+to class A. AUTH fields are not treated as RACF privilege assigned to H7USER.
+
+----------------------------------------------------------------------
+FINAL RESULT
+
+TSO/E SUBMIT as H7USER:         DENIED
+FTP/JES submit as H7USER:       ALLOWED
+JES job identity:               H7USER
+Harmless workload execution:    CC 0000
+Broad H7USER RACF privilege:    NOT OBSERVED
+SURROGAT explanation:           NOT SUPPORTED
+Exact JESINPUT/JESJOBS path:    NOT FULLY ISOLATED
+
+Conclusion:
+TSO/E SUBMIT command authority and FTP/JES workload-submission capability are
+separate authorization paths in the tested environment.
+======================================================================
