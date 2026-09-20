@@ -1,33 +1,38 @@
-# Evidence Screenshots
+# Lab 34 — Screenshot Evidence Index
 
-Copy only the screenshots needed to establish the evidence chain. Preserve originals privately; publish sanitized copies only.
+These screenshots are extracted from the controlled Lab 34 run and retained as publication-safe evidence.
 
-Recommended order:
+The selected images avoid non-loopback host IP addresses, MAC addresses, host adapter identifiers, credentials, private keys, and local host filesystem paths. `127.0.0.1`, `0.0.0.0`, the synthetic test identity `H7USER`, and laboratory JES identifiers are retained because they are directly relevant to the technical evidence.
 
-1. TCP/IP `PORTLIST` showing FTP-related configuration.
-2. `NETSTAT CONN` showing FTPD1 on TCP/21 in LISTEN state.
-3. FTPD1 address-space/runtime mapping.
-4. TCP/IP profile `AUTOLOG` / `PORT` evidence.
-5. FTP.DATA contextual evidence if useful.
-6. Successful H7USER FTP authentication.
-7. FTP `STAT` showing `JESINTERFACELEVEL=1`.
-8. `SITE FILE=JES` accepted.
-9. JES-oriented FTP interaction.
-10. FTPJES1 JCL member as actually submitted.
-11. `STOR` / internal-reader response and JES job identifier.
-12. SDSF `ISF024I ... NOT AUTHORIZED TO SDSF, NO GROUP ASSIGNMENT` evidence, explicitly labeled as SDSF authorization.
-13. JES/JCL diagnostics showing `JCL ERROR 312` / `IEF650I UNIDENTIFIED OPERATION FIELD`, if present in the captured run.
+| File | Evidence | Interpretation |
+|---|---|---|
+| `01-netstat-portlist.png` | z/OS Communications Server port inventory | FTP port 21 is present in the configured service inventory. |
+| `02-netstat-ftp-listener.png` | `NETSTAT CONN` runtime state | `FTPD1` is listening on TCP/21. |
+| `03-ftpd1-address-space.png` | active-address-space display | Correlates the running `FTPD1` service with the laboratory runtime. |
+| `04-ftp-local-connect.png` | FTP client connection to loopback TCP/21 | Establishes the controlled local client path to the FTP server. |
+| `05-h7user-ftp-authentication.png` | successful FTP login as `H7USER` | Proves FTP authentication for the controlled RACF identity; it does not prove downstream JES authority. |
+| `06-ftp-stat-jesinterfacelevel1.png` | FTP `STAT` output | Shows effective runtime `JESINTERFACELEVEL is 1`. |
+| `07-site-file-jes-accepted.png` | `SITE FILE=JES` response | Proves the FTP session entered JES mode. |
+| `08-jes-mode-list.png` | JES-mode `LIST` | Shows JES-oriented FTP interaction after the mode switch. |
+| `09-ftpjes1-controlled-jcl.png` | controlled `IEFBR14` JCL member | Documents the harmless workload intended for the test. |
+| `10-ftp-jes-internal-reader-job07414.png` | FTP `PUT` result | Shows handoff to the JES internal reader and assignment of `JOB07414`. This proves JES ingress, not successful execution. |
+| `11-sdsf-isf024i-denial.png` | `ISF024I` | SDSF authorization denial for `H7USER`; this is not evidence that FTP submission was denied. |
+| `12-job07414-jcl-error312.png` | JES2 job log | Shows `JOB07414` was not run because of `JCL ERROR 312`. |
+| `13-ief650i-unidentified-operation-field.png` | JCL diagnostic | Shows `IEF650I UNIDENTIFIED OPERATION FIELD`; this is a JCL-processing result, not a RACF denial. |
 
-## Sanitization
+## Evidence boundary
 
-Before publication, remove or mask unnecessary:
+The screenshots support the following chain:
 
-- passwords and credentials;
-- private/non-loopback IP addresses;
-- MAC addresses;
-- adapter/interface identifiers;
-- host-side paths and usernames;
-- terminal/session identifiers;
-- unrelated certificate or infrastructure identifiers.
+```text
+FTP service active
+    -> H7USER authenticated
+    -> JES interface enabled
+    -> SITE FILE=JES accepted
+    -> JCL stream sent to JES internal reader
+    -> JOB07414 assigned
+    -> JCL processing failed
+    -> SDSF access was independently denied
+```
 
-Do not redact the technical messages required to support the lab conclusion.
+They do **not** prove successful workload execution or a RACF/JES execution-boundary denial. Those remain separate validation targets for the next phase.
