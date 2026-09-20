@@ -53,7 +53,7 @@ The central question is:
 The repository currently contains two complementary lab series:
 
 - **H1–H13** — controlled RACF access-control and remediation exercises.
-- **Main security series through Lab 33** — wider RACF/SAF, OMVS, JES2/SDSF, OPERCMDS, APF, audit, UNIXPRIV and cryptographic effective-authority analysis.
+- **Main security series through Lab 34** — wider RACF/SAF, OMVS, JES2/SDSF, OPERCMDS, APF, audit, UNIXPRIV, cryptographic effective-authority analysis, and cross-domain FTP-to-JES trust-boundary validation.
 
 Major validated areas include:
 
@@ -87,6 +87,7 @@ Major validated areas include:
 - dedicated RACF key-ring lifecycle
 - certificate-to-key-ring CONNECT authorization
 - retained cryptographic identity with administrative rollback
+- FTP-to-JES ingress and trust-boundary classification
 
 ---
 
@@ -150,6 +151,7 @@ profile
 | [Lab 31](lab-31-racf-digital-certificate-trust-keyring-security-baseline/) | RACF Digital Certificates / Key Rings | Cryptographic authorization baseline |
 | [Lab 32](lab-32-racf-controlled-cryptographic-delegation-keyring-validation/) | RACDCERT Delegation | Function-specific least privilege, RACLIST behavior and rollback |
 | [Lab 33](lab-33-racf-controlled-certificate-keyring-lifecycle/) | Certificate / Key Ring Lifecycle | Synthetic certificate, dedicated ring, CONNECT validation and retained-state rollback |
+| [Lab 34](lab-34-ftp-jes-trust-boundary/) | FTP-to-JES Trust Boundary | Controlled FTP/JES ingress validation, evidence classification and downstream authorization separation |
 
 > The numbering reflects the repository's actual historical development. Missing numbers are not silently represented as completed labs.
 
@@ -382,7 +384,7 @@ General USS administration belongs to the dedicated USS repository.
 
 ### JES2 / SDSF
 
-This repository covers security boundaries such as operational authority, general-resource protection and effective command access.
+This repository covers security boundaries such as operational authority, general-resource protection and effective command access. Lab 34 additionally validates the security interpretation of an FTP-to-JES ingress path while keeping FTP authentication, JES submission, JCL processing and SDSF authorization as distinct control planes.
 
 JES2 execution and spool engineering remain part of the central z/OS engineering track.
 
@@ -556,6 +558,7 @@ RACDCERT / IRR.DIGTCERT.* authorization
 digital certificate / key-ring security baseline
 function-specific cryptographic delegation
 FACILITY RACLIST effective-authority validation
+FTP-to-JES trust-boundary validation
 ```
 
 The current repository should therefore be understood as a **cross-domain z/OS security engineering track**, not only as an introductory RACF command collection.

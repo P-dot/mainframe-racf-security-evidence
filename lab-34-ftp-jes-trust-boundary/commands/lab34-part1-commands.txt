@@ -1,0 +1,216 @@
+======================================================================
+LAB 34 PART 1
+FTP-TO-JES TRUST BOUNDARY
+CONTROLLED INGRESS VALIDATION AND EVIDENCE CLASSIFICATION
+======================================================================
+
+PHASE 1 - DISCOVER TCP/IP PORT CONFIGURATION
+
+/D TCPIP,,NETSTAT,PORTLIST
+
+Purpose:
+Identify configured TCP port ownership and locate the FTP service.
+
+Interpretation:
+PORTLIST represents configured/reserved port relationships. It does not,
+by itself, prove that an application is currently listening.
+
+----------------------------------------------------------------------
+PHASE 2 - VALIDATE THE RUNTIME LISTENER
+
+/D TCPIP,,NETSTAT,CONN
+
+Purpose:
+Distinguish configured ports from active runtime endpoints.
+
+Observed relevant result:
+FTPD1  0.0.0.0..21  LISTEN
+
+Interpretation:
+FTPD1 has an active TCP/21 listening socket. The shown bind scope is not
+proof of reachability from every external network.
+
+----------------------------------------------------------------------
+PHASE 3 - IDENTIFY THE FTP ADDRESS SPACE
+
+/D A,FTPD1
+
+Purpose:
+Inspect the running FTP address space and execution identity.
+
+Observed relevant state:
+FTPD1
+USERID=FTPD
+
+----------------------------------------------------------------------
+PHASE 4 - MAP THE LISTENER TO FTPD1
+
+/D TCPIP,,NETSTAT,ALL,CLIENT=FTPD1
+
+Purpose:
+Correlate the FTPD1 application with its TCP runtime state.
+
+Observed:
+CLIENT NAME: FTPD1
+LOCAL SOCKET: 0.0.0.0..21
+STATE: LISTEN
+
+----------------------------------------------------------------------
+PHASE 5 - MAP RUNTIME TO STATIC TCP/IP CONFIGURATION
+
+Browse:
+ADCD.Z111S.TCPPARMS(PROF1)
+
+Relevant configuration observed in the lab:
+
+AUTOLOG
+  FTPD JOBNAME FTPD1 ; FTP Server
+
+PORT
+  20 TCP OMVS NOAUTOLOG ; FTP Server
+  21 TCP OMVS           ; FTP Server
+
+Purpose:
+Connect the runtime FTPD1 listener to TCP/IP profile configuration.
+
+----------------------------------------------------------------------
+PHASE 6 - INSPECT FTP.DATA
+
+Browse:
+TCPIP.FTP.DATA
+
+Purpose:
+Inspect FTP server reference/default configuration.
+
+Important:
+Commented examples or static values are not automatically proof of effective
+runtime behavior. Authenticated STAT output is used later as runtime evidence.
+
+----------------------------------------------------------------------
+PHASE 7 - AUTHENTICATE USING THE CONTROLLED RACF IDENTITY
+
+From OMVS:
+
+ftp 127.0.0.1
+
+USER:
+H7USER
+
+Observed:
+230 H7USER is logged on.
+
+Interpretation:
+The controlled identity authenticated to FTP. This is not proof of JES,
+resource, command, or SDSF authority.
+
+----------------------------------------------------------------------
+PHASE 8 - QUERY EFFECTIVE FTP SERVER STATE
+
+quote STAT
+
+Observed relevant state:
+JESLRECL is 80
+JESRECFM is Fixed
+JESINTERFACELEVEL is 1
+
+Interpretation:
+The tested FTP runtime exposes JES interface level 1.
+
+----------------------------------------------------------------------
+PHASE 9 - ENTER JES MODE
+
+quote SITE FILE=JES
+
+Observed:
+200 SITE command was accepted
+
+Interpretation:
+The FTP application accepted the transition into JES-oriented processing.
+This does not prove workload execution authority.
+
+----------------------------------------------------------------------
+PHASE 10 - PERFORM JES-ORIENTED INTERACTION
+
+dir
+
+Observed example:
+125 List started OK
+No jobs found on Hold queue
+250 List completed successfully.
+
+Interpretation:
+The FTP session is using the JES interface path. Returned selection results
+must not be treated as proof of broad spool/SDSF authority.
+
+----------------------------------------------------------------------
+PHASE 11 - PREPARE THE CONTROLLED JCL
+
+Dataset/member:
+H7USER.JCL.LAB(FTPJES1)
+
+Intended harmless sample:
+
+//H7FTP1 JOB (LAB),'FTP JES TEST',
+//           CLASS=A,MSGCLASS=X,NOTIFY=H7USER
+//STEP1   EXEC PGM=IEFBR14
+
+Important:
+The exact submitted member must be preserved because the captured run later
+showed a JCL-processing error. Do not assume the displayed sample is identical
+at the byte/column level until verified.
+
+----------------------------------------------------------------------
+PHASE 12 - ATTEMPT FTP-TO-JES HANDOFF
+
+put 'H7USER.JCL.LAB(FTPJES1)'
+
+Observed server responses included:
+
+125 Sending Job to JES internal reader FIXrecfm 80
+250-It is known to JES as JOB07414
+250 Transfer completed successfully.
+
+Interpretation:
+The FTP server accepted the stream and handed it to the JES internal reader.
+The assigned job identifier proves JES ingress, not successful execution.
+
+----------------------------------------------------------------------
+PHASE 13 - CLASSIFY DOWNSTREAM EVIDENCE
+
+Observed SDSF message in the evidence set:
+
+ISF024I USER H7USER NOT AUTHORIZED TO SDSF, NO GROUP ASSIGNMENT
+
+Classification:
+SDSF authorization result. Do NOT label this as a JES submission denial.
+
+Observed job/JCL evidence included:
+
+JOB07414
+JCL ERROR 312
+IEF650I UNIDENTIFIED OPERATION FIELD
+
+Classification:
+JCL/JES conversion or syntax-processing failure. Do NOT label this as a RACF
+authorization denial.
+
+----------------------------------------------------------------------
+FINAL STATE
+
+FTP service discovery:             OBSERVED
+Runtime listener validation:       OBSERVED
+RACF FTP authentication:           OBSERVED
+JES interface discovery:           OBSERVED
+SITE FILE=JES:                     OBSERVED
+JCL transfer:                      OBSERVED
+Internal-reader handoff:           OBSERVED
+JES job identifier assigned:       OBSERVED
+SDSF authorization denial:         OBSERVED SEPARATELY
+JCL-processing failure:            OBSERVED
+Successful workload execution:     NOT PROVEN
+JES/RACF execution denial:         NOT YET ISOLATED
+
+No broad authorization change was performed. Part 2 must first validate a
+syntactically correct harmless job, then identify any downstream security
+boundary using evidence from the actual configuration.
+======================================================================
