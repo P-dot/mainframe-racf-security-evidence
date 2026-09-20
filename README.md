@@ -53,8 +53,7 @@ The central question is:
 The repository currently contains two complementary lab series:
 
 - **H1–H13** — controlled RACF access-control and remediation exercises.
-- **Main security series through Lab 35** — wider RACF/SAF, OMVS, JES2/SDSF, OPERCMDS, APF, audit, UNIXPRIV, cryptographic effective-authority analysis, FTP-to-JES trust-boundary validation
-TN3270 / TSO authentication-response analysis, and TN3270/TSO authentication-response analysis.
+- **Main security series through Lab 35** — wider RACF/SAF, OMVS, JES2/SDSF, OPERCMDS, APF, audit, UNIXPRIV, cryptographic effective-authority analysis, FTP-to-JES trust-boundary validation, and TN3270/TSO authentication-response analysis.
 
 Major validated areas include:
 
