@@ -166,9 +166,17 @@ That directly extends the repository's existing work on controlled identities, J
 
 ## Result
 
-**PARTIAL / BASELINE ESTABLISHED** — the controlled FTP-to-JES ingress path was validated, but the captured run does not yet isolate a RACF/JES authorization denial at the execution boundary. SDSF denial and JCL failure are preserved as separate evidence.
+### Part 1
 
-The next phase must first obtain a syntactically valid harmless job and then test downstream authorization deliberately, without broad privilege and with rollback.
+**BASELINE ESTABLISHED** — the controlled FTP-to-JES ingress path was validated. The captured SDSF denial and JCL-processing failure were preserved as separate downstream observations rather than misclassified as a RACF/JES submission denial.
+
+### Part 2
+
+**PASS — channel-dependent authorization behavior validated.** A fresh, syntactically valid `IEFBR14` job was denied through TSO/E `SUBMIT` for `H7USER`, while the same identity successfully submitted the job through the FTP/JES level-1 path. JES assigned the resulting `JOB07465` to `H7USER`, and the step completed with condition code `0000`.
+
+The Part 2 evidence also established `TSOAUTH JCL` with `UACC(NONE)`, `H7USER` with no broad privileged RACF attributes, no matching `JESJOBS` or `JESINPUT` profiles in the captured searches, no supporting SURROGAT grant for H7USER, and a JES2 internal-reader configuration with `BATCH=YES` and default class `A`.
+
+The precise effective SAF path behind the observed `JESINPUT` / `JESJOBS` state remains an optional deeper hardening investigation. It is not required before continuing with the next threat pattern from the source video.
 
 ## Repository contents
 
@@ -179,7 +187,8 @@ The next phase must first obtain a syntactically valid harmless job and then tes
 - `docs/video-threat-model.md` — what the source video contributes and what is intentionally not copied.
 - `docs/next-part.md` — precise continuation plan.
 - `samples/FTPJES1.jcl` — intended harmless workload sample; validate formatting before reuse.
-- `evidence/screenshots/README.md` — publication-safe evidence checklist.
+- `evidence/screenshots/README.md` — Part 1 publication-safe evidence checklist.
+- `part-2/` — valid-JCL retest, TSOAUTH/FTP-JES comparison, execution proof, RACF/JES review, evidence, and closure decision.
 
 ## Publication safety
 
