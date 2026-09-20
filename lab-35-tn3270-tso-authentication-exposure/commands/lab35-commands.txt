@@ -1,0 +1,83 @@
+======================================================================
+LAB 35
+TN3270 / TSO AUTHENTICATION EXPOSURE AND USER-ENUMERATION RESISTANCE
+======================================================================
+
+PHASE 1 - RACF IDENTITY BASELINE
+
+LISTUSER H7USER
+LISTUSER USER2
+LISTUSER H7NOUSR
+
+Observed:
+- H7USER exists.
+- USER2 exists.
+- H7NOUSR is not defined.
+
+----------------------------------------------------------------------
+PHASE 2 - TN3270 RUNTIME BASELINE
+
+/D TCPIP,,NETSTAT,CONN,PORT=23
+
+Observed:
+TN3270 ... 0.0.0.0..23 ... LISTEN
+
+----------------------------------------------------------------------
+PHASE 3 - TSO RESPONSE FOR EXISTING NON-TSO IDENTITY
+
+At TSO/E logon:
+Userid ===> USER2
+
+Observed:
+IKJ56420I Userid USER2 not authorized to use TSO
+
+----------------------------------------------------------------------
+PHASE 4 - TSO RESPONSE FOR NONEXISTENT IDENTITY
+
+At TSO/E logon:
+Userid ===> H7NOUSR
+
+Observed:
+IKJ56420I Userid H7NOUSR not authorized to use TSO
+
+Interpretation:
+The tested response does not distinguish USER2 from H7NOUSR.
+
+----------------------------------------------------------------------
+PHASE 5 - TSO-ENABLED CONTROLLED IDENTITY
+
+At TSO/E logon:
+Userid ===> H7USER
+
+The normal password field became usable for the TSO-enabled identity.
+
+----------------------------------------------------------------------
+PHASE 6 - SINGLE INCORRECT-PASSWORD TEST
+
+For H7USER, exactly one deliberately incorrect password was entered.
+
+Observed:
+IKJ56421I PASSWORD NOT AUTHORIZED FOR USERID
+IKJ56429A REENTER -
+
+No guessing loop, spraying, dictionary or brute-force process was performed.
+
+----------------------------------------------------------------------
+PHASE 7 - POSITIVE CONTROL
+
+A later correct logon for H7USER progressed successfully into TSO/ISPF.
+The password itself is not retained in evidence.
+
+----------------------------------------------------------------------
+FINAL RESULT
+
+H7USER TSO-enabled + wrong password:  IKJ56421I
+USER2 existing, no usable TSO:        IKJ56420I
+H7NOUSR nonexistent:                  IKJ56420I
+H7USER later correct logon:           SUCCESS
+
+Conclusion:
+The tested TN3270/TSO path exposes a response distinction between a
+TSO-enabled userid with an invalid password and identities that cannot use TSO.
+It did not distinguish an existing non-TSO userid from a nonexistent userid.
+======================================================================

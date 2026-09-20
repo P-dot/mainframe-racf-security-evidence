@@ -53,7 +53,7 @@ The central question is:
 The repository currently contains two complementary lab series:
 
 - **H1–H13** — controlled RACF access-control and remediation exercises.
-- **Main security series through Lab 34** — wider RACF/SAF, OMVS, JES2/SDSF, OPERCMDS, APF, audit, UNIXPRIV, cryptographic effective-authority analysis, and cross-domain FTP-to-JES trust-boundary validation.
+- **Main security series through Lab 35** — wider RACF/SAF, OMVS, JES2/SDSF, OPERCMDS, APF, audit, UNIXPRIV, cryptographic effective-authority analysis, FTP-to-JES trust-boundary validation, and TN3270/TSO authentication-response analysis.
 
 Major validated areas include:
 
@@ -88,6 +88,7 @@ Major validated areas include:
 - certificate-to-key-ring CONNECT authorization
 - retained cryptographic identity with administrative rollback
 - FTP-to-JES ingress and trust-boundary classification
+- TN3270 / TSO authentication-response analysis
 
 ---
 
@@ -152,6 +153,7 @@ profile
 | [Lab 32](lab-32-racf-controlled-cryptographic-delegation-keyring-validation/) | RACDCERT Delegation | Function-specific least privilege, RACLIST behavior and rollback |
 | [Lab 33](lab-33-racf-controlled-certificate-keyring-lifecycle/) | Certificate / Key Ring Lifecycle | Synthetic certificate, dedicated ring, CONNECT validation and retained-state rollback |
 | [Lab 34](lab-34-ftp-jes-trust-boundary/) | FTP-to-JES Trust Boundary | Controlled FTP/JES ingress validation, evidence classification and downstream authorization separation |
+| [Lab 35](lab-35-tn3270-tso-authentication-exposure/) | TN3270 / TSO Authentication Exposure | Controlled response-differentiation and user-enumeration-resistance validation |
 
 > The numbering reflects the repository's actual historical development. Missing numbers are not silently represented as completed labs.
 
