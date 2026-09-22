@@ -53,7 +53,7 @@ The central question is:
 The repository currently contains two complementary lab series:
 
 - **H1–H13** — controlled RACF access-control and remediation exercises.
-- **Main security series through Lab 35** — wider RACF/SAF, OMVS, JES2/SDSF, OPERCMDS, APF, audit, UNIXPRIV, cryptographic effective-authority analysis, FTP-to-JES trust-boundary validation, and TN3270/TSO authentication-response analysis.
+- **Main security series through Lab 36** — wider RACF/SAF, OMVS, JES2/SDSF, OPERCMDS, APF, audit, UNIXPRIV, cryptographic effective-authority analysis, FTP-to-JES trust-boundary validation, TN3270/TSO authentication-response analysis, and TN3270 cleartext transport exposure validation.
 
 Major validated areas include:
 
@@ -89,6 +89,7 @@ Major validated areas include:
 - retained cryptographic identity with administrative rollback
 - FTP-to-JES ingress and trust-boundary classification
 - TN3270 / TSO authentication-response analysis
+- TN3270 cleartext transport exposure validation
 
 ---
 
@@ -154,6 +155,7 @@ profile
 | [Lab 33](lab-33-racf-controlled-certificate-keyring-lifecycle/) | Certificate / Key Ring Lifecycle | Synthetic certificate, dedicated ring, CONNECT validation and retained-state rollback |
 | [Lab 34](lab-34-ftp-jes-trust-boundary/) | FTP-to-JES Trust Boundary | Controlled FTP/JES ingress validation, evidence classification and downstream authorization separation |
 | [Lab 35](lab-35-tn3270-tso-authentication-exposure/) | TN3270 / TSO Authentication Exposure | Controlled response-differentiation and user-enumeration-resistance validation |
+| [Lab 36](lab-36-tn3270-cleartext-transport-exposure/) | TN3270 Cleartext Transport Exposure | Packet-level Telnet/TN3270E transport validation, no-TLS observation and controlled cleanup |
 
 > The numbering reflects the repository's actual historical development. Missing numbers are not silently represented as completed labs.
 

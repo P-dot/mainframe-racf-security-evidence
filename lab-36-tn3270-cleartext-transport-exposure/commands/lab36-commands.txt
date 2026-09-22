@@ -1,0 +1,182 @@
+======================================================================
+LAB 36
+TN3270 CLEARTEXT TRANSPORT EXPOSURE VALIDATION
+======================================================================
+
+PUBLICATION NOTE
+Real private addresses, MAC addresses, terminal/session identifiers,
+hostnames and local paths are not retained in this public command log.
+
+Use placeholders:
+<ZOS_IP>
+<HERCULES_HOST_IP>
+<CLIENT_IP>
+<RELAY_PORT>
+
+----------------------------------------------------------------------
+PHASE 1 - Z/OS TN3270 RUNTIME BASELINE
+
+/D A,TN3270
+/D TCPIP,,NETSTAT,CONN,PORT=23
+/D TCPIP,,NETSTAT,HOME
+/D TCPIP,,NETSTAT,ROUTE
+
+Observed:
+- TN3270 address space active.
+- TCP/23 listener active.
+- ETH1 present in HOME/ROUTE evidence.
+
+----------------------------------------------------------------------
+PHASE 2 - HERCULES HOST TO Z/OS VALIDATION
+
+PowerShell:
+
+ping <ZOS_IP>
+
+Test-NetConnection <ZOS_IP> -Port 23 -InformationLevel Detailed
+
+arp -a | findstr "<ZOS_IP>"
+
+Get-NetAdapter | Format-Table Name,Status,MacAddress,LinkSpeed
+
+Get-NetIPConfiguration
+
+Observed:
+- Hercules host reached <ZOS_IP>.
+- TCP/23 test succeeded.
+
+----------------------------------------------------------------------
+PHASE 3 - EXTERNAL CLIENT DIRECT-REACHABILITY CHECK
+
+Kali:
+
+ping -c 3 <ZOS_IP>
+
+nc -vz -w 3 <ZOS_IP> 23
+
+ip route get <ZOS_IP>
+
+Observed:
+- Direct external path was not available in the tested topology.
+- This was treated as a reachability constraint, not a TN3270 failure.
+
+----------------------------------------------------------------------
+PHASE 4 - TEMPORARY CONTROLLED RELAY
+
+PowerShell as Administrator on Hercules host:
+
+netsh interface portproxy add v4tov4 ^
+  listenaddress=<HERCULES_HOST_IP> ^
+  listenport=<RELAY_PORT> ^
+  connectaddress=<ZOS_IP> ^
+  connectport=23
+
+netsh interface portproxy show all
+
+Temporary inbound rule:
+
+netsh advfirewall firewall add rule ^
+  name="LAB36 TN3270 temporary relay" ^
+  dir=in ^
+  action=allow ^
+  protocol=TCP ^
+  localport=<RELAY_PORT> ^
+  profile=private
+
+Client validation:
+
+nc -vz -w 3 <HERCULES_HOST_IP> <RELAY_PORT>
+
+Observed:
+- Relay listening port reachable from controlled client.
+
+----------------------------------------------------------------------
+PHASE 5 - CONTROLLED TN3270 SESSION
+
+Kali:
+
+c3270 <HERCULES_HOST_IP>:<RELAY_PORT>
+
+Observed:
+- ADCD / VTAM entry screen reached.
+- No password was entered for the capture validation.
+
+----------------------------------------------------------------------
+PHASE 6 - PACKET CAPTURE
+
+Kali:
+
+sudo tcpdump \
+  -i eth0 \
+  -nn \
+  'host <HERCULES_HOST_IP> and tcp port <RELAY_PORT>' \
+  -w ~/lab36-tn3270-cleartext.pcap
+
+After reaching the VTAM entry screen:
+
+Ctrl+C
+
+Review:
+
+sudo tcpdump -nn -r ~/lab36-tn3270-cleartext.pcap
+
+sudo tcpdump -nn -X \
+  -r ~/lab36-tn3270-cleartext.pcap \
+  | grep -A4 -B4 'IBM'
+
+sudo tcpdump -nn -X \
+  -r ~/lab36-tn3270-cleartext.pcap \
+  | grep -A6 -B2 '3278'
+
+Observed:
+- Telnet/TN3270E negotiation visible.
+- IBM-3278-3-E visible in the captured application stream.
+- No TLS handshake observed before TN3270E negotiation.
+
+Raw PCAP:
+- retained locally only;
+- not included in public Git evidence.
+
+----------------------------------------------------------------------
+PHASE 7 - CLEANUP
+
+PowerShell as Administrator:
+
+netsh interface portproxy delete v4tov4 ^
+  listenaddress=<HERCULES_HOST_IP> ^
+  listenport=<RELAY_PORT> ^
+  protocol=tcp
+
+netsh advfirewall firewall delete rule ^
+  name="LAB36 TN3270 temporary relay"
+
+Verification:
+
+netsh interface portproxy show all
+
+netsh advfirewall firewall show rule ^
+  name="LAB36 TN3270 temporary relay"
+
+Expected final state:
+- no Lab 36 portproxy entry;
+- no Lab 36 firewall rule.
+
+----------------------------------------------------------------------
+FINAL RESULT
+
+Validated:
+- TN3270 active.
+- TCP/23 listener active.
+- controlled remote session successful.
+- Telnet/TN3270E negotiation visible in cleartext.
+- IBM-3278-3-E observable in packet payload.
+- no TLS handshake observed on the tested stream.
+- temporary relay removed.
+
+Not claimed:
+- password capture;
+- account takeover;
+- RACF bypass;
+- transparent capture of z/OS ETH1;
+- universal behavior across z/OS installations.
+======================================================================
