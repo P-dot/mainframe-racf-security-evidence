@@ -53,7 +53,7 @@ The central question is:
 The repository currently contains two complementary lab series:
 
 - **H1–H13** — controlled RACF access-control and remediation exercises.
-- **Main security series through Lab 36** — wider RACF/SAF, OMVS, JES2/SDSF, OPERCMDS, APF, audit, UNIXPRIV, cryptographic effective-authority analysis, FTP-to-JES trust-boundary validation, TN3270/TSO authentication-response analysis, and TN3270 cleartext transport exposure validation.
+- **Main security series through Lab 37 Part 1** — wider RACF/SAF, OMVS, JES2/SDSF, OPERCMDS, APF, audit, UNIXPRIV, cryptographic effective-authority analysis, FTP-to-JES trust-boundary validation, TN3270/TSO authentication-response analysis, and TN3270 cleartext transport exposure validation.
 
 Major validated areas include:
 
@@ -90,6 +90,7 @@ Major validated areas include:
 - FTP-to-JES ingress and trust-boundary classification
 - TN3270 / TSO authentication-response analysis
 - TN3270 cleartext transport exposure validation
+- OMVS / NC110 readiness and LCS/ETH1 connectivity-blocker analysis
 
 ---
 
@@ -156,6 +157,7 @@ profile
 | [Lab 34](lab-34-ftp-jes-trust-boundary/) | FTP-to-JES Trust Boundary | Controlled FTP/JES ingress validation, evidence classification and downstream authorization separation |
 | [Lab 35](lab-35-tn3270-tso-authentication-exposure/) | TN3270 / TSO Authentication Exposure | Controlled response-differentiation and user-enumeration-resistance validation |
 | [Lab 36](lab-36-tn3270-cleartext-transport-exposure/) | TN3270 Cleartext Transport Exposure | Packet-level Telnet/TN3270E transport validation, no-TLS observation and controlled cleanup |
+| [Lab 37 — Part 1](lab-37-omvs-netcat-exposure-part-1/) | OMVS / NC110 Readiness | Native TCP/IP/toolchain validation and LCS/ETH1 connectivity-blocker isolation |
 
 > The numbering reflects the repository's actual historical development. Missing numbers are not silently represented as completed labs.
 
