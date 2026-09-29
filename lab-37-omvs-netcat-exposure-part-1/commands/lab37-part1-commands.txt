@@ -1,0 +1,190 @@
+======================================================================
+LAB 37 — PART 1
+OMVS / NC110 READINESS AND LCS/ETH1 CONNECTIVITY BLOCKER
+======================================================================
+
+PUBLICATION NOTE
+Private addresses, MAC addresses, hostnames and host-specific adapter
+identifiers must be pixelated or replaced with placeholders.
+
+----------------------------------------------------------------------
+PHASE 1 — OMVS DISCOVERY
+
+id
+pwd
+uname -a
+
+whence nc
+whence netcat
+whence ncat
+whence telnet
+whence python
+whence python3
+
+ls -l /bin/nc /usr/bin/nc /bin/netcat /usr/bin/netcat 2>/dev/null
+ls -l /bin/telnet /usr/bin/telnet 2>/dev/null
+ls -l /usr/bin/python /usr/bin/python3 2>/dev/null
+
+echo $PATH
+
+----------------------------------------------------------------------
+PHASE 2 — TCP/IP VISIBILITY
+
+whence netstat
+whence onetstat
+
+netstat -a
+onetstat -a
+
+Observed internal listeners included:
+TCP/21
+TCP/22
+TCP/23
+TCP/80
+TCP/111
+
+----------------------------------------------------------------------
+PHASE 3 — NATIVE COMPILER TOOLCHAIN
+
+whence make
+whence cc
+whence c89
+whence xlc
+
+ls -l /bin/make /usr/bin/make 2>/dev/null
+ls -l /bin/cc /usr/bin/cc 2>/dev/null
+ls -l /bin/c89 /usr/bin/c89 2>/dev/null
+ls -l /bin/xlc /usr/bin/xlc 2>/dev/null
+
+make -v
+cc -V
+c89 -V
+xlc -qversion
+
+Observed:
+z/OS V1.11 XL C/C++
+
+Environment note:
+FSUM9383 Configuration file '/etc/startup.mk' not found
+
+----------------------------------------------------------------------
+PHASE 4 — USS WORKSPACE
+
+mkdir -p /u/ibmuser/lab37-nc110
+cd /u/ibmuser/lab37-nc110
+pwd
+ls -la
+
+----------------------------------------------------------------------
+PHASE 5 — EXTERNAL SOURCE STAGING
+
+On controlled Windows host:
+
+curl.exe -L \
+  "https://raw.githubusercontent.com/mainframed/NC110-OMVS/master/netcat.c" \
+  -o C:\LAB37\netcat.c
+
+curl.exe -L \
+  "https://raw.githubusercontent.com/mainframed/NC110-OMVS/master/generic.h" \
+  -o C:\LAB37\generic.h
+
+Get-ChildItem C:\LAB37
+
+----------------------------------------------------------------------
+PHASE 6 — TRANSFER ATTEMPT
+
+ftp <ZOS_IP>
+
+Result:
+connection timeout
+
+----------------------------------------------------------------------
+PHASE 7 — REACHABILITY CLASSIFICATION
+
+Test-NetConnection <ZOS_IP> -Port 21 -InformationLevel Detailed
+Test-NetConnection <ZOS_IP> -Port 23 -InformationLevel Detailed
+ping <ZOS_IP>
+
+Result:
+external host-to-z/OS path unavailable
+
+----------------------------------------------------------------------
+PHASE 8 — WINDOWS LOOPBACK DRIVER VALIDATION
+
+Get-Item C:\Windows\INF\netloop.inf
+
+Select-String \
+  -Path C:\Windows\INF\netloop.inf \
+  -Pattern "KM-TEST","MSLOOP"
+
+Observed driver identifiers:
+*MSLOOP
+Microsoft KM-TEST Loopback Adapter
+
+Existing devnode was repaired/enabled/restarted and reached OK/Up.
+Connectivity remained unavailable.
+
+----------------------------------------------------------------------
+PHASE 9 — HERCULES LCS STATE
+
+Hercules console:
+
+devlist 0E20
+devlist 0E21
+
+Observed:
+LCS pair present.
+Base device initially busy.
+
+----------------------------------------------------------------------
+PHASE 10 — CONTROLLED z/OS STOP
+
+z/OS console:
+
+V TCPIP,,STOP,LCS1
+
+D TCPIP,,NETSTAT,DEVLINKS
+
+Result:
+VARY STOP completed successfully.
+
+----------------------------------------------------------------------
+PHASE 11 — HERCULES REINITIALIZATION RETRY
+
+Hercules console:
+
+devinit 0E20 -n <HOST_NIC_SELECTOR> <ZOS_IP>
+
+Observed:
+HHCTU005E Invalid net device name specified
+HHCLC008E ioctl error on device : Bad file descriptor
+
+----------------------------------------------------------------------
+PHASE 12 — RESTORE z/OS LCS STATE
+
+z/OS console:
+
+V TCPIP,,START,LCS1
+
+D TCPIP,,NETSTAT,DEVLINKS
+D TCPIP,,NETSTAT,HOME
+D TCPIP,,NETSTAT,ROUTE
+
+Result:
+VARY START completed successfully.
+External host reachability was still unavailable.
+
+----------------------------------------------------------------------
+PART 1 STOP CONDITION
+
+NOT EXECUTED:
+- transfer of NC110 source into USS
+- NC110 compilation
+- ./nc execution
+- OMVS/client text exchange
+- EBCDIC/ASCII validation
+
+NEXT:
+restore Hercules LCS/ETH1 host-backend connectivity, then continue
+with Lab 37 Part 2.
+======================================================================
