@@ -2,1028 +2,352 @@
 
 ## Purpose
 
-This document defines the role of `mainframe-racf-security-evidence` within the wider z/OS Engineering Laboratory.
+This document defines how `mainframe-racf-security-evidence` participates in the wider IBM z/OS engineering portfolio.
 
-The repository is the cross-cutting security, authorization, least-privilege, audit-readiness and hardening layer of the ecosystem.
+The repository is the cross-cutting **identity, authorization, least-privilege, security-assurance and trust-boundary layer**. It consumes subsystem context from other repositories and owns the RACF/SAF interpretation of that context.
 
-It does not replace the repositories that own JES2, USS, TCP/IP, Db2, CICS, storage, batch scheduling, or application development. Instead, it examines how RACF and SAF controls apply across those domains.
+Navigation:
 
-Master architecture:
-
-https://github.com/P-dot/zos-adcd-hercules-engineering-lab
+- [Repository README](../README.md)
+- [Portfolio](https://github.com/P-dot/P-dot)
+- [Architecture V2](https://github.com/P-dot/zos-adcd-hercules-engineering-lab/tree/main/docs/architecture/v2)
+- [Engineering Control](https://github.com/P-dot/zos-adcd-hercules-engineering-lab/tree/main/docs/engineering-control)
+- [Recruiter Summary](recruiter-summary.md)
 
 ---
 
 ## 1. Architectural role
 
-The repository sits across the ecosystem rather than beneath only one technology.
+RACF is not an isolated subsystem in this portfolio. SAF requests can originate from many z/OS components.
 
 ```text
-                       RACF / SAF
-                          |
-      +-------------------+--------------------+
-      |                   |                    |
-      v                   v                    v
-   JES2/SDSF            USS/OMVS             TCP/IP
-      |                   |                    |
-      v                   v                    v
- OPERCMDS              UNIXPRIV             SERVAUTH
-      |
-      +-------------------+--------------------+
-      |                   |                    |
-      v                   v                    v
-   datasets             CICS                  Db2
-      |
-      v
-  access control
+                         protected action
+                               |
+                               v
+                              SAF
+                               |
+                               v
+                             RACF
+                               |
+                +--------------+--------------+
+                |              |              |
+                v              v              v
+             identity       resource       policy
+                \              |              /
+                 +-------------+-------------+
+                               |
+                               v
+                    effective authorization
+                               |
+                               v
+                           evidence
 ```
 
-The central function is:
+The repository therefore asks:
 
 ```text
-identity
-   |
-   v
-authorization
-   |
-   v
-effective access
-   |
-   v
-evidence
-   |
-   v
-risk analysis
-   |
-   v
-controlled remediation
-   |
-   v
-rollback
+WHO
+  -> can perform WHAT
+  -> against WHICH RESOURCE
+  -> under WHICH RACF/SAF STATE
+  -> with WHICH EFFECTIVE RESULT
+  -> supported by WHICH EVIDENCE
+  -> and with WHICH ROLLBACK path?
 ```
 
 ---
 
-## 2. Repository responsibility
+## 2. Repository ownership
 
-The repository owns practical security work around:
+### Owned here
 
-- RACF user profiles;
-- RACF group profiles;
+This repository owns evidence and interpretation around:
+
+- RACF users and groups;
 - privileged attributes;
-- dataset profiles;
-- UACC;
-- PERMIT;
-- WARNING mode;
-- group-based access;
-- test identities;
-- access validation;
-- violation evidence;
-- temporary access;
-- rollback;
-- Health Checker security findings;
-- RACF classes;
-- SAF general resources;
-- FACILITY;
-- OPERCMDS;
-- UNIXPRIV;
-- UNIXMAP;
-- OMVS identity exposure;
-- UID/GID mapping;
-- started-task identities;
-- JES2/SDSF authority review;
-- console-command authority;
-- audit and accountability;
-- SMF-related security evidence;
-- APF-related exposure review;
-- PROGRAM-class review;
-- LINKLIST-related protection review;
-- zFS backing-dataset security;
+- dataset profiles, UACC and PERMIT;
+- RACF classes and SAF general resources;
+- FACILITY and OPERCMDS;
 - effective-authority analysis;
+- controlled test identities;
+- functional allow/deny validation;
+- audit and violation evidence;
 - least-privilege delegation;
-- controlled hardening;
-- audit-style reporting;
-- risk registers;
-- production recommendations;
-- RACF digital-certificate and key-ring authorization;
-- `IRR.DIGTCERT.*` FACILITY controls;
-- RACDCERT effective-authority validation;
-- cryptographic least-privilege delegation;
-- RACLIST cache / runtime-authority validation.
+- RACLIST effective-authority behavior;
+- rollback and rollback validation;
+- OMVS identity, UID/GID, UNIXMAP and UNIXPRIV from the RACF side;
+- started-task and technical-identity security;
+- RACF digital certificates and key rings;
+- `IRR.DIGTCERT.*` authorization;
+- RACDCERT delegation;
+- security interpretation of cross-domain trust boundaries.
+
+### Not owned here
+
+| Technology | Owning repository / domain |
+|---|---|
+| OMVS shell, POSIX processes, USS filesystem operations | [`UNIX_System_Services-`](https://github.com/P-dot/UNIX_System_Services-) |
+| TCP/IP, FTP, TN3270, Policy Agent, AT-TLS | [`zos-communications-server-network-lab`](https://github.com/P-dot/zos-communications-server-network-lab) |
+| JES2 execution, spool and core system engineering | [`zos-adcd-hercules-engineering-lab`](https://github.com/P-dot/zos-adcd-hercules-engineering-lab) |
+| Scheduling semantics and workload automation | [`zos-batch-scheduler`](https://github.com/P-dot/zos-batch-scheduler) |
+| Db2 subsystem and SQL engineering | [`DB2-`](https://github.com/P-dot/DB2-) |
+| CICS resource and transaction engineering | [`CICS`](https://github.com/P-dot/CICS) |
+
+Cross-domain evidence does not transfer subsystem ownership to this repository.
 
 ---
 
-## 3. What this repository does not own
+## 3. Evidence-state vocabulary
 
-### USS administration
+Architecture V2 requires explicit separation between demonstrated work and architectural intent.
 
-General shell, filesystem, process, path and POSIX administration belongs to:
+| State | Definition |
+|---|---|
+| **VALIDATED LOCALLY** | Evidence is present in this repository |
+| **VALIDATED IN TARGET REPOSITORY** | Evidence exists in the repository that owns the target technology |
+| **CROSS-DOMAIN / REQUIRES EVIDENCE** | The relationship is identified but the complete path has not been demonstrated |
+| **PLANNED** | Future work only |
+| **BLOCKER DOCUMENTED** | A real execution boundary prevented continuation and was isolated with evidence |
 
-```text
-UNIX_System_Services-
-```
-
-RACF uses USS only where required to validate security behavior.
-
-### Communications Server
-
-TCP/IP configuration, TN3270, FTP, network services and Communications Server operations belong to:
+The following are deliberately not treated as equivalent:
 
 ```text
-zos-communications-server-network-lab
+profile exists
+      !=
+effective access
+
+command succeeded
+      !=
+functional authorization proof
+
+object exists
+      !=
+end-to-end integration
+
+architecture documented
+      !=
+capability validated
 ```
-
-RACF covers the authorization boundary where SAF classes or identities affect those services.
-
-### JES2 and core system engineering
-
-JES2 internals, spool, initialization, SMF collection, WLM, storage and system recovery belong to:
-
-```text
-zos-adcd-hercules-engineering-lab
-```
-
-This repository reviews security exposure around those components.
-
-### Scheduler
-
-Scheduling logic belongs to:
-
-```text
-zos-batch-scheduler
-```
-
-RACF can later validate the authority required by scheduler identities and operators.
-
-### Db2
-
-Db2 subsystem administration and SQL belong to:
-
-```text
-DB2-
-```
-
-RACF may cover subsystem access boundaries and external security controls, but not SQL education.
-
-### CICS
-
-CICS resource definition and transaction processing belong to:
-
-```text
-CICS
-```
-
-RACF can later validate external security integration, but does not own CICS itself.
 
 ---
 
-## 4. Repository structure
+## 4. Evidence tracks
 
-The repository contains two historical lab series.
+The repository contains two historical lab sequences, but Architecture V2 groups their evidence by engineering purpose.
 
-### H-series
+### Access-control lifecycle — H1-H13
+
+The H-series establishes the foundational lifecycle:
 
 ```text
-h1  through h13
+profile
+ -> exposure
+ -> authorization
+ -> controlled identity
+ -> allow / deny
+ -> evidence
+ -> remediation
+ -> cleanup
+ -> rollback
 ```
 
-These labs focus strongly on:
+It covers safe dataset profiles, UACC, PERMIT, WARNING, auditing, controlled identities, functional access, violations, temporary authorization, group-based access and rollback.
 
-- safe dataset-profile exercises;
-- UACC exposure;
-- PERMIT misuse/remediation;
-- WARNING mode;
-- auditing;
-- active-class baselines;
-- controlled identities;
-- real access tests;
-- violation evidence;
-- temporary access;
-- group access;
-- cleanup;
-- rollback.
+### RACF / SAF baseline — Labs 02-14
 
-### Main lab series
+The main series expands into:
 
-The second series includes:
+- installation-level RACF options;
+- Health Checker findings;
+- started-task and technical-user security;
+- OMVS identity;
+- dataset and zFS protection;
+- SAF controls;
+- audit/accountability;
+- JES2/SDSF/OPERCMDS authority;
+- APF/PROGRAM/LINKLIST exposure;
+- consolidated security review.
 
-```text
-lab-02
-lab-03
-lab-04
-lab-05
-lab-06
-lab-07
-lab-08
-lab-09-y-10
-lab-11
-lab-12
-lab-13
-lab-14
-lab-25
-lab-26
-lab-27
-lab-28
-lab-29
-lab-30
-lab-31
-lab-32
-lab-33
-```
+### Effective authority — Labs 25-30
 
-This series expands into cross-domain z/OS security analysis.
-
----
-
-## 5. H1 — Safe Dataset Profiles
-
-The H-series begins with a safe RACF dataset-profile sandbox.
-
-Architectural significance:
+This sequence shifts the emphasis from configuration inventory to runtime security behavior.
 
 ```text
-dataset
+Lab 25  inventory
    |
-   v
-RACF profile
+Lab 26  effective authority
    |
-   v
-access rule
+Lab 27  controlled hardening
    |
-   v
-controlled test
+Lab 28  functional group/dataset access
+   |
+Lab 29  UNIXPRIV / UNIXMAP baseline
+   |
+Lab 30  minimum delegation + rollback proof
 ```
 
-This creates the basic model used throughout later labs.
-
----
-
-## 6. H2 — UACC Exposure
-
-H2 examines open dataset exposure through UACC.
-
-The security principle is:
+### Cryptographic trust — Labs 31-33
 
 ```text
-broad default access
+Lab 31
+IRR.DIGTCERT.* / RACDCERT authorization baseline
         |
         v
-larger exposure
+Lab 32
+function-specific LISTRING / ADDRING / DELRING delegation
+        |
+        v
+Lab 33
+controlled GENCERT / ring / CONNECT lifecycle
 ```
 
-The repo uses this to establish why explicit, narrow authorization is preferable.
-
----
-
-## 7. H3 — PERMIT and Least Privilege
-
-H3 moves from identifying broad access to remediating it.
-
-The conceptual lifecycle is:
+Lab 33 deliberately retains:
 
 ```text
-existing permission
-      |
-      v
-effective access
-      |
-      v
-risk interpretation
-      |
-      v
-least-privilege remediation
+LAB33CERT
++ RACF-managed private key
++ LAB33RING
++ certificate-to-ring association
 ```
 
----
+while removing the temporary administrative delegation used for the experiment.
 
-## 8. H4 — WARNING Mode
+This is a **RACF-side integration artifact**, not evidence of an active TLS service.
 
-H4 introduces the distinction between enforcement and observation.
+### Trust boundaries — Labs 34-37
 
-WARNING can help assess impact before strict enforcement.
-
-The repository treats it as a controlled security state, not as equivalent to fully protected access.
-
----
-
-## 9. H5 — Audit Controls
-
-H5 strengthens the evidence model.
-
-Security work is not complete when authorization exists.
-
-The repository also asks:
+The current advanced track applies RACF/SAF reasoning across subsystem boundaries.
 
 ```text
-Was access attempted?
-Was it allowed?
-Was it denied?
-Can the event be demonstrated?
+Lab 34  FTP -> JES
+Lab 35  TN3270 -> TSO authentication surface
+Lab 36  TN3270 transport
+Lab 37  OMVS / NC110 readiness -> network blocker
 ```
 
----
-
-## 10. H6 — Active-Class Baseline
-
-H6 examines RACF class activation and Health Checker context.
-
-The lab explicitly includes classes such as:
-
-```text
-UNIXPRIV
-TEMPDSN
-OPERCMDS
-```
-
-This is an important architectural bridge from simple profile administration into installation-wide security posture.
+These labs intentionally distinguish the security boundary being analyzed from the subsystem that owns the underlying technology.
 
 ---
 
-## 11. H7 — Controlled Test Identity
+## 5. USS integration
 
-H7 introduces a dedicated test identity.
+### RACF side
 
-This is a major methodological improvement.
-
-Instead of validating changes against critical system identities, the repo can use a controlled subject.
-
-Pattern:
-
-```text
-admin identity
-      |
-      v
-security change
-      |
-      v
-controlled test identity
-      |
-      v
-functional validation
-```
-
----
-
-## 12. H8 — Real Access Test
-
-H8 goes beyond profile inspection.
-
-The repository validates whether effective access matches RACF configuration.
-
-That distinction is central:
-
-```text
-profile definition
-      !=
-functional proof
-```
-
----
-
-## 13. H9 — Violation Evidence
-
-H9 explicitly captures denied access.
-
-This creates evidence for:
-
-- policy enforcement;
-- troubleshooting;
-- audit review;
-- control validation.
-
----
-
-## 14. H10 — Temporary Access
-
-H10 examines temporary authorization and remediation.
-
-The important lifecycle is:
-
-```text
-need
- |
- v
-temporary access
- |
- v
-validation
- |
- v
-remove access
- |
- v
-verify final state
-```
-
----
-
-## 15. H11 — Group-Based Access
-
-H11 moves authorization away from one-off user permissions toward group-based models.
-
-Conceptually:
-
-```text
-user
- |
- v
-group
- |
- v
-resource authorization
-```
-
-This is more scalable and closer to enterprise access-control practice.
-
----
-
-## 16. H12 — Access Cleanup
-
-H12 reviews stale or excessive access.
-
-Security is treated as a lifecycle:
-
-```text
-grant
- |
- v
-use
- |
- v
-review
- |
- v
-cleanup
-```
-
-not as a one-time configuration task.
-
----
-
-## 17. H13 — Restricted User and Rollback
-
-H13 emphasizes impact analysis and safe rollback.
-
-The repository therefore treats security changes as operational changes that require recovery planning.
-
----
-
-## 18. Lab 02 — RACF Global Options Review
-
-The main sequence expands from individual profiles into installation-level RACF configuration.
-
-The architectural question becomes:
-
-```text
-How is RACF configured globally?
-```
-
-This is necessary before interpreting individual access decisions.
-
----
-
-## 19. Lab 03 — Health Checker Sensitive Resources
-
-Lab 03 connects RACF analysis with z/OS Health Checker.
-
-This adds an independent system-health perspective to manual RACF inspection.
-
----
-
-## 20. Lab 04 — Security Model Baseline
-
-Lab 04 establishes a wider security baseline.
-
-A baseline enables later comparisons:
-
-```text
-BEFORE
-  |
-  v
-change
-  |
-  v
-AFTER
-```
-
----
-
-## 21. Lab 05 — Started Task Security
-
-Lab 05 connects started tasks to security identities.
-
-This is a key cross-domain relationship:
-
-```text
-started task
-      |
-      v
-RACF identity
-      |
-      v
-effective authority
-```
-
-This relationship matters to Communications Server, JES2, Db2, CICS and other subsystem workloads.
-
----
-
-## 22. Lab 06 — Technical Users
-
-Lab 06 reviews technical identities and privilege.
-
-This separates:
-
-```text
-human administrator
-```
-
-from:
-
-```text
-service / technical identity
-```
-
-The distinction matters because production systems should avoid unnecessary broad privilege in long-running service identities.
-
----
-
-## 23. Lab 07 — z/OS UNIX / OMVS Baseline
-
-Lab 07 introduces the RACF side of z/OS UNIX identity and privilege.
-
-The integration path is:
+RACF owns the identity and authorization view:
 
 ```text
 RACF user
    |
-   v
-OMVS segment
+   +--> OMVS segment
+   +--> UID / GID
+   +--> UNIXMAP
+   +--> UNIXPRIV
    |
    v
-UID / GID
-   |
-   v
-USS effective identity
+effective UNIX authorization
 ```
 
-General USS administration remains outside this repository.
+Labs 07, 29 and 30 provide relevant local evidence.
 
----
+### USS side
 
-## 24. Lab 08 — Dataset Protection Baseline
+The USS repository owns:
 
-Lab 08 returns to dataset security at wider scope.
+- shell behavior;
+- POSIX processes;
+- pathnames;
+- file ownership and mode bits;
+- filesystem operations;
+- shell scripting.
 
-It examines whether sensitive data has visible RACF profile protection.
+### Current integration state
 
-This supports later work around system datasets, application datasets and zFS backing datasets.
+RACF-to-USS identity and privileged-function behavior is **VALIDATED LOCALLY** where the RACF labs exercise those boundaries.
 
----
-
-## 25. Labs 09–10 — zFS and SAF
-
-These labs bridge:
+A broader end-to-end automation path such as:
 
 ```text
-zFS
- |
- v
-backing dataset
- |
- v
-RACF DATASET control
+JCL -> BPXBATCH -> USS script -> RACF-controlled resource
 ```
 
-and:
-
-```text
-z/OS service
- |
- v
-SAF class
- |
- v
-general-resource authorization
-```
-
-This is an important point: USS filesystem security and MVS dataset security can intersect.
+requires separate cross-repository evidence.
 
 ---
 
-## 26. Lab 11 — Audit, Logging and Accountability
+## 6. JES2 / SDSF integration
 
-Lab 11 examines whether security-relevant activity is observable and attributable.
+RACF-side concerns include:
 
-The broader chain is:
-
-```text
-identity
- |
- v
-action
- |
- v
-authorization decision
- |
- v
-security event
- |
- v
-audit evidence
-```
-
----
-
-## 27. Lab 12 — JES2 / SDSF / OPERCMDS / Console Authority
-
-Lab 12 is one of the clearest cross-domain security labs.
-
-It connects RACF to operational control:
-
-```text
-operator identity
-      |
-      v
-RACF / SAF
-      |
-      +--> OPERCMDS
-      +--> SDSF
-      +--> JES resources
-      |
-      v
-effective operational authority
-```
-
-JES2 and SDSF remain operational components; RACF owns the authorization interpretation in this repo.
-
----
-
-## 28. Lab 13 — APF / PROGRAM / Authorized Libraries
-
-Lab 13 moves into highly sensitive system-program exposure.
-
-It reviews relationships among:
-
-- APF;
-- PROGRAM;
-- LINKLIST;
-- dataset protection;
-- authorized libraries.
-
-This is a review and hardening perspective.
-
-It does not mean the repository implements authorized Assembler programs.
-
----
-
-## 29. Lab 14 — Final RACF / OMVS Audit
-
-Lab 14 consolidates the earlier audit path.
-
-It covers findings around:
-
-- privileged RACF users;
-- technical IDs;
-- started tasks;
-- OMVS;
-- UID(0);
-- DATASET protection;
-- zFS backing datasets;
-- FACILITY;
-- UNIXPRIV;
-- SERVAUTH;
 - OPERCMDS;
-- JESSPOOL;
-- JESJOBS;
-- SDSF;
-- logging/accountability;
-- APF;
-- PROGRAM;
-- LINKLIST.
+- JES-related general-resource controls;
+- SDSF authorization;
+- operator identity;
+- started-task identity;
+- dataset access;
+- channel-specific authorization.
 
-The result is an audit-style hardening roadmap rather than a single configuration change.
+JES2 owns job execution and spool behavior.
+
+### Lab 34: why boundary classification matters
+
+Lab 34 demonstrates that these stages cannot be collapsed into one result:
+
+```text
+FTP authentication
+       |
+       v
+FTP/JES ingress
+       |
+       v
+internal-reader handoff
+       |
+       v
+JCL processing
+       |
+       v
+job execution
+       |
+       v
+SDSF visibility
+```
+
+Part 1 validates the ingress path and preserves downstream failures without misclassifying them.
+
+Part 2 validates channel-dependent behavior: the controlled identity is denied through TSO/E `SUBMIT`, while a syntactically valid `IEFBR14` job is accepted through the FTP/JES level-1 path, assigned a JES job ID and completes with condition code `0000`.
+
+This is **VALIDATED LOCALLY** as a trust-boundary experiment. It is not a claim that RACF owns FTP or JES2.
 
 ---
 
-## 30. Lab 25 — FACILITY / OPERCMDS Review
+## 7. Communications Server integration
 
-Lab 25 begins a later hardening sequence around general-resource authorization.
-
-Architecturally, this is the transition from:
+Communications Server owns:
 
 ```text
-inventory
+TCP/IP
+FTP
+TN3270
+routing
+listeners
+Policy Agent / PAGENT
+TTLSRule
+AT-TLS
+network transport
 ```
 
-to:
+RACF owns the associated identity, SAF and cryptographic authorization questions.
 
-```text
-effective authority analysis
-```
+### Cryptographic handoff
 
-and eventually:
-
-```text
-controlled remediation
-```
-
----
-
-## 31. Lab 26 — OPERCMDS Effective Authority
-
-Lab 26 focuses on effective authority rather than profile presence alone.
-
-This matters because a RACF profile can exist while actual access depends on:
-
-- UACC;
-- user entries;
-- group entries;
-- generic matching;
-- class state;
-- RACLIST state.
-
-The key principle is:
-
-```text
-configured profile
-      !=
-effective authority
-```
-
----
-
-## 32. Lab 27 — OPERCMDS Controlled Hardening
-
-Lab 27 applies controlled hardening and validates the result.
-
-The pattern is:
-
-```text
-baseline
-   |
-   v
-analyze effective authority
-   |
-   v
-controlled change
-   |
-   v
-refresh
-   |
-   v
-functional validation
-```
-
----
-
-## 33. Lab 28 — ISPF Group and Dataset Access
-
-Lab 28 reconnects group membership and dataset profiles with a practical ISPF workflow.
-
-This demonstrates that RACF security is visible through normal user activity, not only through administrative commands.
-
----
-
-## 34. Lab 29 — UNIXPRIV Baseline
-
-Lab 29 establishes a read-only baseline for privileged z/OS UNIX authorization.
-
-It explicitly separates RACF/SAF security from general USS administration.
-
-The validated state includes:
-
-```text
-UNIXPRIV
-  ACTIVE
-  GENERIC
-  RACLISTed
-```
-
-Observed profiles include:
-
-```text
-SUPERUSER.FILESYS
-SUPERUSER.FILESYS.CHANGEPERMS
-SUPERUSER.FILESYS.CHOWN
-SUPERUSER.FILESYS.MOUNT
-```
-
-The observed profiles use:
-
-```text
-UACC(NONE)
-```
-
-and the lab treats UID(0) mappings as an exposure inventory requiring careful dependency analysis.
-
----
-
-## 35. Lab 29 — UNIXMAP
-
-The lab demonstrates use of UNIXMAP as a compatible way to inspect UID mapping where another native search path was unavailable due to installation configuration.
-
-This is valuable because the methodology does not change global RACF configuration merely to make an inquiry command work.
-
-Pattern:
-
-```text
-preferred inquiry unavailable
-        |
-        v
-document limitation
-        |
-        v
-use safe compatible alternative
-```
-
----
-
-## 36. Lab 30 — Controlled UNIXPRIV Delegation
-
-Lab 30 is one of the strongest functional validation labs in the repository.
-
-It demonstrates:
-
-```text
-DENIED
-   |
-   v
-minimal RACF grant
-   |
-   v
-ALLOWED
-   |
-   v
-rollback
-   |
-   v
-DENIED
-```
-
-The same user, file and operation are used across the lifecycle.
-
----
-
-## 37. Lab 30 — Least Privilege
-
-The test subject remains globally non-privileged.
-
-The lab explicitly avoids granting:
-
-- UID(0);
-- SPECIAL;
-- OPERATIONS;
-- broad UNIXPRIV wildcard authority;
-- global superuser authority.
-
-Instead, one narrowly scoped UNIXPRIV capability is delegated.
-
-This is a direct least-privilege demonstration.
-
----
-
-## 38. Lab 30 — RACLIST Refresh
-
-The lab also demonstrates the operational importance of refreshing a RACLISTed class after authorization changes.
-
-Conceptually:
-
-```text
-RACF database change
-        |
-        v
-RACLIST cache
-        |
-        v
-REFRESH
-        |
-        v
-effective runtime authorization
-```
-
----
-
-## 39. Lab 30 — Rollback Proof
-
-Rollback is not treated as complete merely because a `PERMIT ... DELETE` command succeeds.
-
-The final denial proves the authorization was actually removed.
-
-This is stronger evidence:
-
-```text
-configuration rollback
-        +
-functional rollback validation
-```
-
----
-
-## RACF cryptographic-security track
-
-### Lab 31 — Digital Certificate Trust and Key Ring Security Baseline
-
-Lab 31 establishes the RACF-side baseline for certificate and key-ring administration.
-
-It deliberately does not duplicate the network-oriented certificate inventory already performed by the Communications Server repository.
+Current state:
 
 ```text
 Communications Server
 certificate / service inventory
         |
         v
-RACF
-administrative authorization
-effective authority
-least privilege
-```
-
-The lab validates the observed `IRR.DIGTCERT.*` control state and confirms that the controlled non-privileged identity cannot issue the tested RACDCERT operations without explicit authorization.
-
-### Lab 32 — Controlled Cryptographic Delegation and Key Ring Validation
-
-Lab 32 converts the Lab 31 baseline into a controlled least-privilege experiment.
-
-```text
-LISTRING
-IRR.DIGTCERT.LISTRING READ
-        |
-        v
-own key-ring query allowed
-
-ADDRING
-IRR.DIGTCERT.ADDRING UPDATE
-        |
-        v
-laboratory key ring created
-
-DELRING
-IRR.DIGTCERT.DELRING UPDATE
-        |
-        v
-laboratory key ring removed
-```
-
-The lab also proves the importance of RACLIST refresh behavior. After temporary permissions were removed from the RACF database, the previously cached FACILITY authorization remained effective until:
-
-```text
-SETROPTS RACLIST(FACILITY) REFRESH
-```
-
-The lab finishes with object rollback, authorization rollback, and structural rollback, and verifies return to the original denied state.
-
-### Lab 33 — Controlled Certificate and Key Ring Lifecycle
-
-Lab 33 completes the RACF-side cryptographic lifecycle by creating synthetic cryptographic material under controlled ownership and function-specific authorization.
-
-The validated sequence includes:
-
-```text
-GENCERT denied
-        |
-        v
-minimum operation-specific delegation
-        |
-        v
-LAB33CERT created
-        |
-        v
-LAB33RING created
-        |
-        v
-LISTRING boundary validated
-        |
-        v
-CONNECT denied
-        |
-        v
-CONNECT delegated
-        |
-        v
-LAB33CERT -> LAB33RING
-        |
-        v
-temporary administrative authority removed
-        |
-        v
-FACILITY RACLIST refreshed
-        |
-        v
-H7USER denied again
-```
-
-The lab deliberately retains `LAB33CERT`, its RACF-managed private key, `LAB33RING`, and their association while removing temporary H7USER administrative authority and deleting the Lab 33-specific FACILITY profiles.
-
-This is a controlled retained state for cross-repository integration. It does not demonstrate an active AT-TLS, Policy Agent, System SSL, or network TLS path.
-
-```text
-Communications Server Lab 09
-certificate / key-ring inventory
-        |
-        v
 RACF Lab 31
-cryptographic authorization baseline
+authorization baseline
         |
         v
 RACF Lab 32
@@ -1031,924 +355,617 @@ controlled RACDCERT delegation
         |
         v
 RACF Lab 33
-controlled certificate + key-ring lifecycle
+LAB33CERT + LAB33RING
         |
         v
-Communications Server
-PAGENT / TTLSRule / AT-TLS
-        |
-        v
-TLS validation
-        |
-        v
-SMF / observability
+Communications Server consumption
+CROSS-DOMAIN / REQUIRES EVIDENCE
 ```
+
+The retained RACF objects do not prove that Policy Agent, System SSL, AT-TLS or a TLS-protected network path is active.
+
+### TN3270 authentication surface — Lab 35
+
+Lab 35 compares controlled authentication outcomes and validates a **limited response distinction** at the TN3270/TSO logon surface.
+
+The result must remain narrowly worded. It is evidence of observed response differentiation in the tested environment, not a universal claim about every z/OS installation.
+
+### TN3270 transport — Lab 36
+
+Lab 36 moves down the stack and validates cleartext TN3270 transport on the tested path through packet-level evidence.
+
+This is **VALIDATED LOCALLY**.
+
+The network engineering itself remains owned by Communications Server.
 
 ---
 
-## 40. Core security model
+## 8. Lab 37 and the USS/network boundary
 
-Across the repository, the recurring model is:
+Lab 37 Part 1 validates readiness without fabricating completion.
+
+Validated:
 
 ```text
-WHO
- |
- v
-identity
-
-CAN DO WHAT
- |
- v
-authorization
-
-TO WHICH RESOURCE
- |
- v
-profile / class
-
-UNDER WHICH DEFAULT
- |
- v
-UACC
-
-WITH WHICH EFFECTIVE RESULT
- |
- v
-ALLOW / DENY
-
-WITH WHICH EVIDENCE
- |
- v
-audit / screenshots / findings
-
-AND HOW TO RECOVER
- |
- v
-rollback
+OMVS shell
+native TCP/IP visibility
+C/C++ toolchain readiness
+controlled USS workspace
+NC110 source staging preparation
 ```
 
----
+The external LCS/ETH1 path is isolated as the blocker.
 
-## 41. RACF and SAF
+The lab intentionally stops before NC110 execution.
 
-RACF is treated as the security manager.
-
-SAF is the system interface through which many z/OS components request authorization.
-
-Therefore the ecosystem view is:
+State:
 
 ```text
-application / subsystem
-        |
-        v
-       SAF
-        |
-        v
-      RACF
-        |
-        v
-authorization decision
+Part 1 readiness             VALIDATED LOCALLY
+LCS/ETH1 connectivity issue  BLOCKER DOCUMENTED
+NC110 execution              PENDING
+Part 2                       PENDING
 ```
 
-This is why the repository naturally intersects many other repos.
+This is a useful Architecture V2 example because a documented blocker is preserved as engineering evidence rather than rewritten as success.
 
 ---
 
-## 42. Relationship with USS
+## 9. Workload-automation integration
 
-The security integration path is:
+The scheduler repository owns scheduling logic and state.
 
-```text
-RACF
- |
- +--> OMVS segment
- |
- +--> UID / GID
- |
- +--> UNIXMAP
- |
- +--> UNIXPRIV
- |
- v
-USS effective security
-```
-
-General shell and filesystem administration remain owned by the USS repository.
-
----
-
-## 43. Relationship with Communications Server
-
-Communications Server commonly depends on technical identities and SAF-controlled resources.
-
-The intended architectural relationship is:
-
-```text
-Communications Server
-        |
-        v
-technical identity
-        |
-        v
-SAF request
-        |
-        v
-RACF authorization
-```
-
-Relevant RACF-side topics can include:
-
-- service identities;
-- started-task mapping;
-- SERVAUTH;
-- dataset access;
-- OMVS attributes;
-- privileged UNIX capabilities;
-- RACF certificate/key-ring ownership and administration;
-- `IRR.DIGTCERT.*` effective authority;
-- least-privilege RACDCERT delegation.
-
-Specific networking behavior remains in the Communications Server repo.
-
----
-
-## 44. Relationship with JES2
-
-JES2 owns batch execution.
-
-RACF owns the security view of:
-
-- operator authority;
-- JES resource classes;
-- command authority;
-- SDSF-related control;
-- started-task identity;
-- dataset access.
-
-Conceptually:
-
-```text
-operator / scheduler / user
-        |
-        v
-      RACF
-        |
-        v
- JES2 / SDSF operation
-```
-
----
-
-## 45. Relationship with the Scheduler
-
-The scheduler must eventually run under an identity with precisely enough authority to:
-
-- submit work;
-- inspect work;
-- hold/release where designed;
-- interact with JES2;
-- access required datasets.
-
-The intended integration is:
+A future security path is:
 
 ```text
 scheduler identity
-      |
-      v
-RACF
-      |
-      v
-JES2 authority
-      |
-      v
+       |
+       v
+RACF / SAF
+       |
+       v
+JES authority
+       |
+       v
 scheduled workload
 ```
 
-This is planned cross-repo integration, not yet a completed scheduler/RACF end-to-end lab.
+Security questions include the minimum authority required to submit, inspect and control designed workloads.
+
+State: **CROSS-DOMAIN / REQUIRES EVIDENCE**.
+
+No scheduler/RACF end-to-end least-privilege chain is claimed here.
 
 ---
 
-## 46. Relationship with Db2
+## 10. CICS and Db2 integration
 
-Db2 has its own authorization model, but z/OS and RACF still matter around:
+### CICS
 
-- subsystem access;
-- technical identities;
-- started tasks;
-- datasets;
-- external security boundaries;
-- operational commands.
+Potential RACF-side concerns include:
 
-The RACF repo should cover only the RACF/SAF side of such future integration.
-
----
-
-## 47. Relationship with CICS
-
-CICS also intersects RACF through:
-
-- region identities;
+- region identity;
 - user authentication;
 - transaction/resource authorization;
-- datasets;
+- dataset access;
 - started-task security.
 
-The actual CICS resource model remains in the CICS repository.
+State: **PLANNED / REQUIRES EVIDENCE**.
+
+CICS resource engineering remains in the CICS repository.
+
+### Db2
+
+Potential RACF-side concerns include:
+
+- subsystem identities;
+- started tasks;
+- datasets;
+- operational boundaries;
+- external security integration.
+
+State: **PLANNED / REQUIRES EVIDENCE**.
+
+Db2 SQL authorization and subsystem engineering remain in the Db2 repository.
 
 ---
 
-## 48. Relationship with Storage
+## 11. Core z/OS integration
 
-Sensitive datasets include:
+The central z/OS engineering repository owns:
 
-- system libraries;
-- application data;
-- zFS backing datasets;
-- logs;
-- security-relevant data.
+- IPL and initialization;
+- PARMLIB;
+- system-wide configuration;
+- JES2 engineering;
+- storage infrastructure;
+- SMF infrastructure;
+- Health Checker infrastructure;
+- diagnostics and recovery.
 
-RACF's role is:
+RACF consumes that context when interpreting protected resources and authorization.
+
+Examples already present in the security evidence include:
+
+- Health Checker security findings;
+- JES2/SDSF/OPERCMDS review;
+- APF/PROGRAM/LINKLIST security analysis;
+- zFS backing-dataset protection.
+
+---
+
+## 12. Effective-authority model
+
+A recurring repository principle is:
 
 ```text
-dataset
- |
- v
-profile
- |
- v
+configured RACF state
+        |
+        +--> class active?
+        +--> generic processing?
+        +--> RACLIST?
+        +--> matching profile?
+        +--> UACC?
+        +--> explicit user entry?
+        +--> group authority?
+        +--> cached state?
+        |
+        v
 effective authority
+        |
+        v
+functional result
 ```
 
-Storage management itself remains in the central z/OS engineering repository.
+This is why later labs prefer functional allow/deny evidence over administrative output alone.
 
 ---
 
-## 49. Relationship with SMF
+## 13. RACLIST and runtime state
 
-Security evidence may depend on SMF records and audit configuration.
-
-The relationship is:
+Labs 30-33 demonstrate why database state and effective runtime state must be distinguished for RACLISTed classes.
 
 ```text
-security event
-      |
-      v
-SMF / audit trail
-      |
-      v
-evidence
+RACF database change
+       |
+       v
+RACLIST cache
+       |
+       v
+SETROPTS RACLIST(class) REFRESH
+       |
+       v
+effective runtime authorization
 ```
 
-SMF infrastructure and record-management engineering belong to the central repo.
+A rollback is not considered fully demonstrated until the effective behavior is restored.
 
 ---
 
-## 50. Relationship with Health Checker
+## 14. Least-privilege model
 
-Health Checker provides an additional system-level assessment source.
+The repository avoids proving a narrow function by granting broad global authority.
 
-The RACF repository uses it for security posture validation.
-
-It does not own Health Checker itself.
-
----
-
-## 51. Relationship with z_Assembly
-
-Assembler can eventually interact with system services that trigger SAF checks.
-
-However, no current repository evidence should be interpreted as implementing:
-
-- RACF exits;
-- SAF exits;
-- authorized security modules;
-- RACF control-block manipulation.
-
-Those remain advanced future topics.
-
----
-
-## 52. Validated capabilities
-
-The current repository validates practical work in:
-
-| Capability | State |
-|---|---|
-| RACF user review | Validated |
-| RACF group review | Validated |
-| privileged attribute analysis | Validated |
-| dataset profile review | Validated |
-| UACC exposure analysis | Validated |
-| PERMIT analysis | Validated |
-| least-privilege remediation | Validated |
-| WARNING mode analysis | Validated |
-| audit-control review | Validated |
-| Health Checker RACF review | Validated |
-| controlled test identity | Validated |
-| functional access tests | Validated |
-| violation evidence | Validated |
-| temporary access lifecycle | Validated |
-| group-based access | Validated |
-| access cleanup | Validated |
-| rollback validation | Validated |
-| started-task security review | Validated |
-| technical user review | Validated |
-| OMVS security baseline | Validated |
-| zFS backing-dataset review | Validated |
-| SAF class review | Validated |
-| RACF audit/accountability baseline | Validated |
-| JES2/SDSF/OPERCMDS authority review | Validated |
-| APF/PROGRAM/LINKLIST security review | Validated |
-| FACILITY review | Validated |
-| OPERCMDS effective-authority analysis | Validated |
-| controlled OPERCMDS hardening | Validated |
-| ISPF/group/dataset functional access | Validated |
-| UNIXPRIV baseline | Validated |
-| UNIXMAP UID(0) exposure review | Validated |
-| controlled UNIXPRIV delegation | Validated |
-| functional rollback proof | Validated |
-| RACF digital-certificate/key-ring authorization baseline | Validated |
-| RACDCERT LISTRING least-privilege delegation | Validated |
-| RACDCERT ADDRING least-privilege delegation | Validated |
-| RACDCERT DELRING least-privilege delegation | Validated |
-| FACILITY RACLIST effective-authority behavior | Validated |
-| cryptographic authorization rollback | Validated |
-| controlled RACF certificate generation | Validated |
-| dedicated RACF key-ring creation | Validated |
-| RACDCERT CONNECT authorization boundary | Validated |
-| certificate-to-key-ring association | Validated |
-| retained cryptographic state after administrative rollback | Validated |
-
----
-
-## 53. Planned cross-repo capabilities
-
-These should remain explicitly marked as planned:
-
-| Capability | State |
-|---|---|
-| Scheduler service-ID security integration | Planned |
-| Scheduler/JES2 least-privilege authority | Planned |
-| Communications Server SERVAUTH end-to-end integration | Planned |
-| CICS external security integration | Planned |
-| Db2 external RACF integration | Planned |
-| Assembler SAF-call integration | Planned |
-| Production-style identity lifecycle automation | Planned |
-| Cross-repo SMF security-event correlation | Planned |
-| End-to-end enterprise security control chain | Planned |
-| RACF-to-Communications Server AT-TLS handoff | Planned |
-| End-to-end TLS validation with RACF-backed key ring | Planned |
-
----
-
-## 54. Security methodology
-
-The mature methodology used by the repo is:
+Preferred pattern:
 
 ```text
-Inventory
+DENIED
    |
    v
-Baseline
+minimum function-specific authorization
    |
    v
-Interpret effective authority
+ALLOWED
    |
    v
-Identify risk
+remove authorization
    |
    v
-Design minimal change
+refresh if required
    |
    v
-Apply
-   |
-   v
-Refresh if required
-   |
-   v
-Functional validation
-   |
-   v
-Rollback
-   |
-   v
-Functional rollback validation
-   |
-   v
-Document
+DENIED AGAIN
 ```
 
----
+Examples include UNIXPRIV and RACDCERT delegation.
 
-## 55. Read-only before change
-
-A strong rule for future labs should be:
-
-> Prefer inquiry and baseline collection before modifying RACF configuration.
-
-This avoids making changes without understanding:
-
-- profile matching;
-- class state;
-- group relationships;
-- current ACLs;
-- technical dependencies.
+Controlled identities are preferred over experimental changes to critical subsystem IDs.
 
 ---
 
-## 56. Effective access over profile presence
+## 15. Evidence and rollback
 
-Future labs should continue emphasizing:
+A change-oriented security lab should answer:
 
-```text
-"profile exists"
-```
+1. What was the baseline?
+2. What operation was denied or exposed?
+3. What minimum change was made?
+4. Was a runtime refresh required?
+5. What functional result changed?
+6. What was rolled back?
+7. Was rollback validated functionally?
+8. What evidence was retained?
 
-is not enough.
-
-The important question is:
-
-```text
-What access does the identity effectively have?
-```
-
----
-
-## 57. Functional validation over command success
-
-Similarly:
-
-```text
-PERMIT returned successfully
-```
-
-does not by itself prove the target operation is allowed.
-
-The strongest evidence is a functional test.
-
----
-
-## 58. Rollback as a first-class requirement
-
-Any change-oriented security lab should contain:
-
-- exact rollback command;
-- expected final configuration;
-- functional rollback test;
-- evidence of restored control.
-
----
-
-## 59. Critical identity protection
-
-Future cross-domain labs must avoid experimental privilege removal from critical technical identities unless dependencies are fully understood.
-
-Examples of sensitive service identities can include networking, subsystem or initialization tasks.
-
-Controlled test identities should remain the preferred validation model.
-
----
-
-## 60. Publication discipline
-
-Public evidence must be screened for:
-
-- passwords;
-- tokens;
-- secrets;
-- private keys;
-- IP addresses;
-- MAC addresses;
-- host-only network details;
-- terminal/session identifiers;
-- unnecessary user identifiers;
-- host adapter names;
-- infrastructure details unrelated to the lab.
-
-Security repositories deserve especially strict review because evidence often contains privileged system information.
-
----
-
-## 61. Evidence model
-
-A strong RACF lab should include:
+Depending on scope, evidence can include:
 
 ```text
 README
 commands
+screenshots
 findings
 risk analysis
 evidence manifest
-screenshots
-rollback
-security review
+before / after state
+rollback procedure
+rollback proof
+limitations
+publication review
 ```
 
-where applicable.
-
-Not every read-only lab requires a rollback document.
+Read-only labs do not require artificial rollback documentation.
 
 ---
 
-## 62. Audit-style documentation
+## 16. Publication-security model
 
-This repository is stronger when it separates:
+Security evidence receives strict publication review.
 
-```text
-observation
-finding
-risk
-recommendation
-evidence
-```
+Do not publish unnecessary:
 
-rather than blending them together.
+- passwords, credentials, tokens or secrets;
+- private keys;
+- private IP addresses;
+- MAC addresses;
+- host adapter names or identifiers;
+- terminal/session identifiers;
+- unrelated host infrastructure;
+- sensitive information not required to establish the technical result.
 
----
-
-## 63. Production-context language
-
-The repository should continue clearly distinguishing:
-
-```text
-ADCD / Hercules lab observation
-```
-
-from:
-
-```text
-production recommendation
-```
-
-A lab weakness is not automatically proof that a production installation is insecure.
+Where possible, use synthetic identities, narrow resource names and sanitized evidence.
 
 ---
 
-## 64. Controlled environment
+## 17. Architecture V2 lifecycle
 
-The work should continue to be framed as:
+The portfolio lifecycle is:
 
-- educational;
-- reproducible;
-- controlled;
-- non-production;
-- evidence-driven.
+```text
+Discover
+  -> Baseline
+  -> Configure
+  -> Operate
+  -> Observe
+  -> Diagnose
+  -> Recover
+  -> Improve
+  -> Automate
+  -> Integrate
+```
 
-The value is in the methodology and demonstrated technical skill.
+RACF labs do not need to force every stage into every exercise.
+
+Typical security-change mapping:
+
+```text
+Discover / Baseline
+        |
+        v
+Observe effective authority
+        |
+        v
+Configure minimal change
+        |
+        v
+Validate operation
+        |
+        v
+Recover / rollback
+        |
+        v
+Validate restored control
+        |
+        v
+Document / integrate
+```
 
 ---
 
-## 65. Future integration — RACF + Communications Server
+## 18. Evidence maturity
 
-The RACF-side cryptographic prerequisite is now validated through Lab 33. The network-consumption and observability stages remain planned.
-
-Recommended future branch:
+The repository has evolved through several levels of engineering evidence:
 
 ```text
-integration/racf-network-smf
-```
-
-Current handoff:
-
-```text
-Communications Server certificate/key-ring inventory
-        |
-        v
-RACF Lab 31 authorization baseline
-        |
-        v
-RACF Lab 32 controlled delegation
-        |
-        v
-RACF Lab 33
-LAB33CERT + LAB33RING
-        |
-        v
-Communications Server [planned]
-Policy Agent / TTLSRule / AT-TLS
-        |
-        v
-controlled TLS validation
-        |
-        v
-SMF / observability
-```
-
-The retained RACF objects are not evidence that a network TLS path is already active.
-
----
-
-## 66. Future integration — USS + RACF + TCP/IP
-
-Recommended cross-repo path:
-
-```text
-USS
- |
- v
-RACF OMVS identity
- |
- v
-UNIXPRIV / filesystem capability
- |
- v
-TCP/IP service
-```
-
-This should avoid duplicating general USS or Communications Server teaching.
-
----
-
-## 67. Future integration — Scheduler + RACF + JES2
-
-Recommended path:
-
-```text
-scheduler service identity
-        |
-        v
-RACF authorization
-        |
-        v
-JES2 submission / control
-        |
-        v
-scheduled workload
-```
-
-Security objective:
-
-> Grant only the JES and dataset authority required by the scheduler design.
-
----
-
-## 68. Future integration — CICS
-
-Potential future path:
-
-```text
-user
- |
- v
-RACF authentication / authorization
- |
- v
-CICS region
- |
- v
-transaction
-```
-
-This remains planned.
-
----
-
-## 69. Future integration — Db2
-
-Potential future path:
-
-```text
-technical identity
+profile inspection
       |
       v
-RACF / z/OS boundary
+risk interpretation
       |
       v
-Db2 subsystem
+controlled identity
+      |
+      v
+functional allow / deny
+      |
+      v
+least-privilege change
+      |
+      v
+rollback proof
+      |
+      v
+cross-domain trust-boundary analysis
 ```
 
-Keep SQL privilege concepts in the Db2 repository.
+This progression is more meaningful than assigning the same maturity label to every lab.
 
 ---
 
-## 70. Future integration — Security observability
+## 19. Production tracks
 
-A mature cross-repo security flow can become:
+RACF/SAF contributes security controls to several portfolio production tracks.
+
+### Secure Batch Application
 
 ```text
-access attempt
-      |
-      v
-SAF / RACF decision
-      |
-      v
-SMF evidence
-      |
-      v
-analysis
-      |
-      v
-finding
-      |
-      v
-remediation
+identity
+ -> RACF/SAF
+ -> datasets / JES controls
+ -> batch workload
+ -> audit evidence
 ```
+
+### Secure Network Service
+
+```text
+service identity
+ -> RACF/SAF
+ -> certificate/key-ring authorization
+ -> network service
+ -> transport security
+ -> observability
+```
+
+The RACF cryptographic side is partially validated; network consumption remains cross-domain work.
+
+### Enterprise Batch Operations
+
+```text
+operator / scheduler identity
+ -> RACF authority
+ -> JES2 / SDSF
+ -> workload control
+```
+
+Parts of the RACF operator-authority model are locally validated; scheduler-specific integration requires evidence.
+
+### Problem Determination
+
+Security incidents can require correlation among:
+
+```text
+identity
+authorization
+command result
+subsystem evidence
+SMF / audit evidence
+network evidence
+```
+
+Cross-repository correlation remains an integration objective rather than a completed universal capability.
 
 ---
 
-## 71. Recommended branch model
+## 20. Current capability state
 
-Security integration should continue using short-lived branches.
+### Validated locally
+
+Evidence exists for:
+
+- RACF users, groups and privileged attributes;
+- dataset profiles, UACC and PERMIT;
+- WARNING and audit controls;
+- controlled test identities;
+- functional allow/deny tests;
+- temporary and group-based authorization;
+- cleanup and rollback;
+- started-task and technical-user security review;
+- OMVS / UID / GID security;
+- zFS backing-dataset protection;
+- SAF/FACILITY/OPERCMDS analysis;
+- JES2/SDSF authority review from the security side;
+- APF/PROGRAM/LINKLIST security review;
+- effective-authority analysis;
+- UNIXPRIV / UNIXMAP;
+- controlled UNIXPRIV delegation;
+- RACLIST behavior;
+- RACF certificate/key-ring authorization;
+- controlled RACDCERT delegation;
+- synthetic certificate/key-ring lifecycle;
+- FTP-to-JES trust-boundary behavior;
+- TN3270/TSO authentication-response analysis;
+- cleartext TN3270 transport on the tested path;
+- Lab 37 Part 1 readiness and blocker isolation.
+
+### Cross-domain / requires evidence
+
+- `LAB33CERT` / `LAB33RING` consumption by Communications Server;
+- AT-TLS validation using the retained RACF objects;
+- scheduler service-ID / JES least privilege;
+- SERVAUTH end-to-end integration;
+- CICS external security integration;
+- Db2 external RACF integration;
+- cross-repository SMF security-event correlation;
+- NC110 execution and Lab 37 Part 2.
+
+---
+
+## 21. Branch and change discipline
+
+Repository-wide documentation changes should use dedicated documentation branches.
+
+Security experiments should continue to use narrow lab branches where practical.
+
+Before merging:
+
+```text
+baseline known
+documentation/evidence reviewed
+scope explicit
+publication safety checked
+rollback state documented where relevant
+working tree clean
+```
+
+Architecture V2 documentation must not silently reclassify a planned capability as validated.
+
+---
+
+## 22. Learning journey versus runtime architecture
+
+A learning sequence is not the same as a runtime dependency graph.
+
+A learner may encounter:
+
+```text
+TSO / ISPF
+ -> JCL
+ -> scheduler
+ -> REXX
+ -> USS
+ -> RACF / SAF
+```
+
+but runtime relationships are cross-cutting:
+
+```text
+                     RACF / SAF
+                        |
+       +----------------+----------------+
+       |                |                |
+      JES2             USS             TCP/IP
+       |                |                |
+    workload         process          service
+```
+
+Documentation should not imply that one technology is architecturally "after" another merely because it appears later in a learning path.
+
+---
+
+## 23. Navigation and handoff rules
+
+Every cross-repository relationship should identify:
+
+1. which repository owns the technology;
+2. which repository owns the security interpretation;
+3. what evidence already exists;
+4. what remains unvalidated;
+5. where the next engineering handoff belongs.
 
 Examples:
 
 ```text
-docs/racf-ecosystem-integration-v1
-integration/racf-network-smf
-integration/racf-scheduler-jes2
-integration/racf-uss-unixpriv
-integration/racf-cics-security
-integration/racf-db2-security
-fix/racf-documentation
+RACF certificate/key ring
+   -> Communications Server consumes it
+
+RACF UNIXPRIV
+   -> USS exercises the protected function
+
+RACF JES authority
+   -> JES2 executes the workload
+
+RACF scheduler identity
+   -> scheduler owns workload-control semantics
 ```
 
-Lifecycle:
-
-```text
-main
- |
- +--> branch
-        |
-        +--> change
-        +--> evidence
-        +--> security review
-        +--> validation
-        +--> rollback where applicable
-        |
-        v
-       PR
-        |
-        v
-      main
-        |
-        v
- delete branch
-```
+This prevents duplicate labs and inflated capability claims.
 
 ---
 
-## 72. Root README status
+## 24. Target integration paths
 
-The current root README represents an early stage of the repository.
-
-It still describes introductory `LISTUSER` and `LISTGRP` work and references early planned labs.
-
-The repository now contains substantially more mature work through Lab 30.
-
-Therefore the root README should be rebuilt in a separate documentation branch after this integration document is merged.
-
-Recommended branch:
+### Cryptographic network path
 
 ```text
-docs/racf-root-readme-v2
+RACF Labs 31-33
+       |
+       v
+LAB33CERT + LAB33RING
+       |
+       v
+Communications Server
+Policy Agent / TTLSRule / AT-TLS
+       |
+       v
+TLS validation
+       |
+       v
+SMF / observability
 ```
 
-Do not mix that rebuild into the current ecosystem-integration branch.
+Current state after the RACF object lifecycle: **CROSS-DOMAIN / REQUIRES EVIDENCE**.
+
+### USS security path
+
+```text
+RACF identity
+ -> OMVS attributes
+ -> UNIXPRIV
+ -> USS protected operation
+ -> functional evidence
+```
+
+Individual RACF-side functions are validated. Broader cross-repository production-like chains should be evidenced separately.
+
+### Scheduler security path
+
+```text
+scheduler service identity
+ -> RACF
+ -> JES authority
+ -> workload
+ -> operational evidence
+```
+
+Current state: **CROSS-DOMAIN / REQUIRES EVIDENCE**.
 
 ---
 
-## 73. Recommended root README future structure
+## 25. Engineering rule
 
-The future root README should include:
+The security repository should become more integrated without becoming less precise.
 
-- repository mission;
-- current lab status;
-- H-series explanation;
-- main-series explanation;
-- current Labs 25–30;
-- major security domains;
-- validated capabilities;
-- architecture integration;
-- selected evidence highlights;
-- safety and publication scope;
-- navigation table;
-- learning path;
-- production-vs-lab disclaimer.
+The governing rule is:
+
+> **Do not infer end-to-end security from one layer of evidence.**
+
+A network listener does not prove RACF authorization. A RACF permit does not prove application behavior. A certificate/key ring does not prove TLS. A JES handoff does not by itself prove successful execution.
+
+The portfolio is strongest when each repository proves its own layer and cross-repository tracks connect those proofs explicitly.
 
 ---
 
-## 74. Repository maturity
+## Final role statement
 
-The repository has evolved from:
+`mainframe-racf-security-evidence` provides the evidence-backed RACF/SAF security layer of the IBM z/OS engineering portfolio.
 
-```text
-LISTUSER / LISTGRP
-```
-
-through:
+Its mature engineering pattern is:
 
 ```text
-dataset access
-UACC
-PERMIT
-WARNING
-audit
-Health Checker
-test identities
-functional denial
-group access
-rollback
+identity
+  + protected resource
+  + effective authority
+  + functional validation
+  + least privilege
+  + audit evidence
+  + rollback
+  + trust-boundary analysis
 ```
 
-into:
+while subsystem-specific implementation remains with the repositories that own those technologies.
 
-```text
-OMVS
-UNIXPRIV
-OPERCMDS
-JES2/SDSF
-APF
-PROGRAM
-LINKLIST
-audit roadmap
-effective-authority analysis
-controlled hardening
-least-privilege delegation
-```
+Back to:
 
-This is no longer an introductory RACF-only repository.
-
-It is a cross-domain z/OS security engineering track.
-
----
-
-## 75. Ecosystem security principle
-
-The central architectural principle is:
-
-> RACF should not duplicate subsystem engineering; it should prove who can do what, to which protected resource, under which effective authority, with evidence and rollback.
-
-This keeps the repo focused while still making it central to the entire z/OS laboratory.
-
----
-
-## 76. Target end state
-
-The long-term architecture should support:
-
-```text
-                 RACF / SAF
-                    |
-   +----------------+----------------+
-   |                |                |
-   v                v                v
-Scheduler         USS             TCP/IP
-   |                |                |
-   v                v                v
- JES2           UNIXPRIV         SERVAUTH
-   |
-   +----------------+----------------+
-                    |
-                    v
-            enterprise workload
-                    |
-                    v
-              SMF evidence
-                    |
-                    v
-              audit analysis
-```
-
-RACF becomes the cross-cutting control plane for identity and authorization across the broader lab ecosystem.
-
----
-
-## 77. Engineering rule
-
-The repository should continue to follow this rule:
-
-> Never treat a RACF command, profile, or ACL as sufficient evidence by itself when effective access can be safely tested.
-
-The strongest lab pattern is:
-
-```text
-baseline
- -> denied
- -> minimal change
- -> allowed
- -> rollback
- -> denied
-```
-
-Lab 30 demonstrates exactly this model and provides a strong template for future controlled security integrations.
-
----
-
-## 78. Final role statement
-
-`mainframe-racf-security-evidence` is the z/OS Engineering Laboratory's security-control and assurance repository.
-
-Its purpose is to connect:
-
-- identity;
-- RACF;
-- SAF;
-- effective authorization;
-- subsystem access;
-- audit evidence;
-- least privilege;
-- controlled hardening;
-- rollback.
-
-The repository should remain the source of truth for RACF-side security analysis across the wider ecosystem while leaving subsystem-specific engineering to the repositories that own those technologies.
+- [Repository README](../README.md)
+- [Portfolio](https://github.com/P-dot/P-dot)
+- [Architecture V2](https://github.com/P-dot/zos-adcd-hercules-engineering-lab/tree/main/docs/architecture/v2)
+- [Engineering Control](https://github.com/P-dot/zos-adcd-hercules-engineering-lab/tree/main/docs/engineering-control)
