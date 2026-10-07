@@ -397,3 +397,25 @@ mainframe-racf-security-evidence
 ```
 
 **Repository role:** provide evidence-backed RACF/SAF security engineering while leaving subsystem-specific engineering to the repositories that own those technologies.
+
+---
+
+## Academy bridge — Communications Server + RACF/SAF
+
+Network security on z/OS crosses repository boundaries. Communications Server owns the TCP/IP service and policy context; SAF/RACF owns identity, protected-resource authorization and RACF-managed cryptographic objects.
+
+**Existing learning chain:** Labs 31–33 build certificate/key-ring authority and lifecycle → [Communications Lab 21](https://github.com/P-dot/zos-communications-server-network-lab/tree/main/labs/21-policy-agent-attls-readiness-assessment) assesses AT-TLS readiness → [Lab 22](https://github.com/P-dot/zos-communications-server-network-lab/tree/main/labs/22-controlled-policy-agent-attls-implementation) reaches controlled TTLS enablement → [Lab 23](https://github.com/P-dot/zos-communications-server-network-lab/tree/main/labs/23-http-attls-integration-readiness-part-1) consumes the security-side identity/trust context.
+
+This is a cross-domain course path, not duplicated ownership.
+
+[Open the z/OS Engineering Academy →](https://github.com/P-dot/P-dot/blob/main/docs/ACADEMY.md)
+
+---
+
+## Academy bridge — Communications Server + RACF/SAF
+
+Network security on z/OS crosses domain boundaries. Communications Server owns the TCP/IP service and policy context; SAF/RACF owns identity and protected-resource authorization.
+
+**Existing learning chain:** cryptographic-trust Labs 31–33 → [Communications AT-TLS readiness](https://github.com/P-dot/zos-communications-server-network-lab/tree/main/labs/21-policy-agent-attls-readiness-assessment) → [controlled TTLS enablement](https://github.com/P-dot/zos-communications-server-network-lab/tree/main/labs/22-controlled-policy-agent-attls-implementation) → [HTTP AT-TLS integration readiness](https://github.com/P-dot/zos-communications-server-network-lab/tree/main/labs/23-http-attls-integration-readiness-part-1).
+
+[Open the z/OS Engineering Academy →](https://github.com/P-dot/P-dot/blob/main/docs/ACADEMY.md)
