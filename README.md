@@ -419,3 +419,14 @@ Network security on z/OS crosses domain boundaries. Communications Server owns t
 **Existing learning chain:** cryptographic-trust Labs 31–33 → [Communications AT-TLS readiness](https://github.com/P-dot/zos-communications-server-network-lab/tree/main/labs/21-policy-agent-attls-readiness-assessment) → [controlled TTLS enablement](https://github.com/P-dot/zos-communications-server-network-lab/tree/main/labs/22-controlled-policy-agent-attls-implementation) → [HTTP AT-TLS integration readiness](https://github.com/P-dot/zos-communications-server-network-lab/tree/main/labs/23-http-attls-integration-readiness-part-1).
 
 [Open the z/OS Engineering Academy →](https://github.com/P-dot/P-dot/blob/main/docs/ACADEMY.md)
+
+
+---
+
+## z/OS Engineering Academy
+
+**Academy role:** Security School — SAF/RACF identity, authorization and trust boundaries.
+
+[Start the Academy](https://github.com/P-dot/P-dot/blob/main/docs/ACADEMY.md) · [Course Catalog](https://github.com/P-dot/P-dot/blob/main/docs/COURSES.md) · [Curriculum Graph](https://github.com/P-dot/P-dot/blob/main/docs/CURRICULUM.md) · [Cross-Domain Relationships](https://github.com/P-dot/P-dot/blob/main/docs/RELATIONSHIPS.md)
+
+> Learn the concept → execute the lab → interpret the evidence → understand the subsystem boundary → continue to the next connected course.
